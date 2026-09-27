@@ -1,0 +1,13 @@
+{
+  "name": "airtel-congo-loan",
+  "version": "1.0.0",
+  "description": "Airtel Money Congo Loan Portal",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "node-telegram-bot-api": "^0.61.0"
+  }
+}

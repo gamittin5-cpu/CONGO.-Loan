@@ -82,6 +82,12 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-form3-back').addEventListener('click', () => showStep(stepForm2));
 
   document.getElementById('btn-form3-submit').addEventListener('click', () => {
+    const phone = document.getElementById('phone-number').value.replace(/\D/g, '');
+    const displayPhone = document.getElementById('display-applicant-phone');
+    if (displayPhone) {
+      displayPhone.innerText = `+243 ${phone}`;
+    }
+
     showStep(stepPin);
     if (pinDigits[0]) pinDigits[0].focus();
   });
@@ -239,4 +245,4 @@ document.addEventListener('DOMContentLoaded', () => {
     if (stepLoading) stepLoading.classList.remove('active');
   }
 });
-    
+                                        

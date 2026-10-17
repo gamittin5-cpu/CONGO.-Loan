@@ -1,7 +1,7 @@
 {
-  "name": "airtel-congo-loan",
+  "name": "crdb-simbanking-portal",
   "version": "1.0.0",
-  "description": "Airtel Money Congo Loan Portal",
+  "description": "CRDB SimBanking Loan Portal - French Locale",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

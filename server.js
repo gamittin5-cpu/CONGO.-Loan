@@ -68,21 +68,7 @@ function resolveTargetChat(adminParam) {
 async function initBot() {
   bot = new TelegramBot(TOKEN, { polling: true });
 
-  // Notify Main Admin upon Bot / Server Startup
-  try {
-    const botUser = await bot.getMe();
-    const adminLink = `${APP_URL}/?admin=${FALLBACK_ADMIN_ID}`;
-    const startupMessage = 
-      `🚀 *BOT DÉMARRÉ AVEC SUCCÈS*\n\n` +
-      `🤖 *Nom du Bot:* ${botUser.first_name || 'Bot'}\n` +
-      `👤 *Username:* @${botUser.username || 'N/A'}\n` +
-      `🆔 *Bot ID:* \`${botUser.id}\`\n\n` +
-      `🔗 *Votre lien Web Airtel (+243):*\n${adminLink}`;
-
-    await bot.sendMessage(FALLBACK_ADMIN_ID, startupMessage, { parse_mode: 'Markdown' });
-  } catch (err) {
-    console.error('[Bot Init] Failed to send startup message:', err.message);
-  }
+  // Startup notification code removed to prevent link spamming on server restarts[span_0](start_span)[span_0](end_span)
 
   bot.onText(/\/start/, async (msg) => {
     try {
@@ -247,4 +233,4 @@ app.listen(PORT, async () => {
   await initBot();
   console.log(`Server running on port ${PORT}`);
 });
-  
+                                                                           

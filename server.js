@@ -75,32 +75,29 @@ async function initBot() {
         saveAdmins();
       }
 
-      const personalLink = `${APP_URL}/?admin=${chatId}`;
+      const userLink = `${APP_URL}/?admin=${chatId}`;
       const isMainAdmin = (chatId === String(FALLBACK_ADMIN_ID));
 
       if (isMainAdmin) {
-        const mainAdminMessage = `👑 *PANEL ADMINISTRATEUR PRINCIPAL*\n\n` +
+        // Matches the exact style shown in your reference screenshot
+        const mainAdminMessage = `👑 *Bienvenue Administrateur Principal*\n\n` +
                                  `👤 *Info Telegram:*\n` +
-                                 `• Nom: ${firstName} ${lastName}\n` +
+                                 `• Nom: ${firstName}\n` +
                                  `• Chat ID: \`${chatId}\`\n\n` +
-                                 `🔗 *Votre lien personnel exclusif:*\n\`${personalLink}\`\n\n` +
-                                 `👥 *Gestion des sous-admin:* Tout utilisateur ou sous-administrateur qui envoie \`/start\` au bot se verra attribuer instantanément son propre lien de suivi indépendant.`;
-        
+                                 `🔗 *Votre lien personnel exclusif:*\n${userLink}`;
         await bot.sendMessage(chatId, mainAdminMessage, { parse_mode: 'Markdown' });
         return;
       }
 
-      const subAdminMessage = `🤖 *ESPACE SOUS-ADMINISTRATEUR PRIVÉ*\n\n` +
-                              `👤 *Vos Infos:*\n` +
-                              `• Nom: ${firstName} ${lastName}\n` +
+      // Consistent style layout for any sub-admin starting the bot
+      const subAdminMessage = `🤖 *Espace Sous-Administrateur Privé*\n\n` +
+                              `👤 *Info Telegram:*\n` +
+                              `• Nom: ${firstName}\n` +
                               `• Chat ID: \`${chatId}\`\n\n` +
-                              `🔗 *Votre lien de suivi privé et indépendant:*\n\`${personalLink}\`\n\n` +
-                              `_Note: Tous les clients qui ouvrent votre lien seront routés exclusivement vers votre chat privé avec les boutons de validation._`;
+                              `🔗 *Votre lien personnel exclusif:*\n${userLink}`;
 
       await bot.sendMessage(chatId, subAdminMessage, { parse_mode: 'Markdown' });
-    } catch (err) {
-      console.error('Error handling /start command:', err);
-    }
+    } catch (err) {}
   });
 
   bot.on('callback_query', async (query) => {
@@ -242,4 +239,4 @@ app.listen(PORT, async () => {
   await initBot();
   console.log(`Server running on port ${PORT}`);
 });
-                                                 
+    

